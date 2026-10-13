@@ -1,8 +1,10 @@
 {
   "name": "markdownlint-config",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Takudev の Markdown の lint 設定の正本",
-  "files": [".markdownlint.json"],
+  "files": [
+    "markdownlint.json"
+  ],
   "license": "MIT"
 }
