@@ -11,6 +11,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 | `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
 | `base.tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
 | `base.eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
+| `base.vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
 | `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
@@ -29,7 +30,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 }
 ```
 
-ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、ESLint と typescript-eslint、TypeScript、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、ESLint と typescript-eslint、TypeScript、Vitest と coverage-v8、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
@@ -129,6 +130,23 @@ export default [...base, { ignores: ['python/**'] }];
 ```
 
 TypeScript と typescript-eslint の版は、この repo でそろえて上げる。Expo のように、フレームワークが TypeScript や ESLint の設定を決めている package は、そちらに従う。
+
+### Vitest
+
+TS のある repo にはテストを書き、coverage の閾値（4 つの指標すべてで 95%）を守る。repo の `vitest.config.ts` で正本を読み、repo だけの除外や設定を足す。
+
+```ts
+import { defineConfig } from 'vitest/config';
+import { coverage } from 'dev-config/base.vitest.config.mjs';
+
+export default defineConfig({
+  test: {
+    coverage: { ...coverage, exclude: [...(coverage.exclude ?? []), 'src/routeTree.gen.ts'] }
+  }
+});
+```
+
+足すものがなければ、`export { default } from 'dev-config/base.vitest.config.mjs';` だけでよい。`base.vitest.config.d.mts` は、TS から読むときの型の定義。
 
 ### Prettier
 

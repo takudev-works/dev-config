@@ -13,7 +13,9 @@
     "base.prettierrc.json",
     "base.secretlintignore",
     "base.secretlintrc.json",
-    "base.tsconfig.json"
+    "base.tsconfig.json",
+    "base.vitest.config.d.mts",
+    "base.vitest.config.mjs"
   ],
   "scripts": {
     "check": "run-p check:*",
@@ -29,6 +31,7 @@
     "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
+    "@vitest/coverage-v8": "4.1.11",
     "cspell": "^10.3.6",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
@@ -38,7 +41,8 @@
     "prettier": "^3.9.9",
     "secretlint": "^13.0.6",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.0"
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^4.1.11"
   },
   "prettier": "./base.prettierrc.json"
 }
