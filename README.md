@@ -146,7 +146,7 @@ Markdown は整形しない。Prettier は表の列を必ず揃えるが、日�
 
 ### commitlint
 
-`subject-case` は大文字だけと PascalCase の subject を禁じる。日本語の subject は通るが、`README を直す` のように大文字だけの英単語で始まると大文字だけと判定されて落ちる。
+Conventional Commits の形（`feat: …` など）を検査する。`subject-case`（subject の大文字・小文字の書き方）は検査しない。subject は日本語で書くので、この規則は `README を直す` や `TypeScript を上げる` のように固有名詞で始まる subject を落とすだけになるため。
 
 ## GitHub Actions の部品
 
