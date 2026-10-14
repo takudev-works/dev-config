@@ -9,11 +9,13 @@
     "base.cspell.json",
     "base.markdownlint-cli2.jsonc",
     "base.npmpackagejsonlintrc.json",
+    "base.prettierrc.json",
     "base.secretlintignore",
     "base.secretlintrc.json"
   ],
   "scripts": {
     "check": "run-p check:*",
+    "check:format": "prettier --check .",
     "check:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
     "check:package-json": "npmPkgJsonLint --configFile base.npmpackagejsonlintrc.json \"**/package.json\"",
     "check:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
@@ -27,6 +29,8 @@
     "markdownlint-cli2": "^0.23.3",
     "npm-package-json-lint": "^11.0.0",
     "npm-run-all2": "^9.0.3",
+    "prettier": "^3.9.9",
     "secretlint": "^13.0.6"
-  }
+  },
+  "prettier": "./base.prettierrc.json"
 }

@@ -9,6 +9,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 | `base.commitlintrc.json` | commitlint | Conventional Commits |
 | `base.secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
 | `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
+| `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
@@ -21,11 +22,12 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 {
   "devDependencies": {
     "lint-config": "github:takudev-works/lint-config#v3.0.0"
-  }
+  },
+  "prettier": "lint-config/base.prettierrc.json"
 }
 ```
 
-ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
@@ -43,6 +45,8 @@ pre-commit:
     markdownlint:
       glob: '**/*.md'
       run: bun markdownlint-cli2 --config node_modules/lint-config/base.markdownlint-cli2.jsonc {staged_files}
+    prettier:
+      run: bun prettier --check --ignore-unknown {staged_files}
     cspell:
       run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
@@ -96,6 +100,14 @@ lefthook では `--no-must-find-files` を付ける。コミットしたファ�
 ### secretlint
 
 `--secretlintignore` は 1 つしか渡せない。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+
+### Prettier
+
+package.json の `"prettier"` に `lint-config/base.prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
+
+Markdown は整形しない。Prettier は表の列を必ず揃えるが、日本語と数値が混ざる表は詰めた書き方のほうが読みやすい（markdownlint の MD060 を無効にしているのと同じ理由）。正本の `overrides` で `*.md` に `requirePragma` を付け、`@format` の印がある md だけを整形の対象にしている。md の検査は markdownlint に任せる。
+
+除外は repo の `.gitignore` と `.prettierignore` に従う。lock ファイルなど Prettier が形式を知らないファイルは、`--ignore-unknown` で読み飛ばす。
 
 ### npm-package-json-lint
 

@@ -11,6 +11,8 @@ pre-commit:
     markdownlint:
       glob: '**/*.md'
       run: bun markdownlint-cli2 --config base.markdownlint-cli2.jsonc {staged_files}
+    prettier:
+      run: bun prettier --check --ignore-unknown {staged_files}
     cspell:
       run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
