@@ -33,6 +33,8 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
 ```yaml
+glob_matcher: doublestar
+
 commit-msg:
   commands:
     commitlint:
@@ -50,6 +52,8 @@ pre-commit:
     secretlint:
       run: bun secretlint --secretlintrc node_modules/lint-config/base.secretlintrc.json --secretlintignore node_modules/lint-config/base.secretlintignore {staged_files}
 ```
+
+`glob_matcher: doublestar` は、`**/*.md` をルート直下の md にも一致させるため。lefthook の既定では `**` が 1 階層以上の意味になり、ルート直下のファイルが検査されない。
 
 lefthook の設定そのものを共有しない（`extends` や `remotes` を使わない）のは、それらが repo の `lefthook.yml` より後に読まれて上書きするため。repo ごとの除外を `lefthook.yml` に書けなくなる。
 
@@ -78,7 +82,7 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
   "version": "0.2",
   "import": ["./node_modules/lint-config/base.cspell.json"],
   "ignorePaths": ["python/reference/**"],
-  "words": ["refino"]
+  "words": ["<その repo だけの単語>"]
 }
 ```
 
