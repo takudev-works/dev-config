@@ -9,6 +9,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 | `base.commitlintrc.json` | commitlint | Conventional Commits |
 | `base.secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
 | `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
+| `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
@@ -24,7 +25,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 }
 ```
 
-ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
@@ -43,10 +44,12 @@ pre-commit:
       glob: '**/*.md'
       run: bun markdownlint-cli2 --config node_modules/lint-config/base.markdownlint-cli2.jsonc {staged_files}
     cspell:
-      glob: '**/*.{md,json,jsonc,yml,yaml}'
-      run: bun cspell --no-progress --no-summary {staged_files}
+      run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
       run: bun secretlint --secretlintrc node_modules/lint-config/base.secretlintrc.json --secretlintignore node_modules/lint-config/base.secretlintignore {staged_files}
+    package-json:
+      glob: '**/package.json'
+      run: bun run check:package-json
 ```
 
 `glob_matcher: doublestar` は、`**/*.md` をルート直下の md にも一致させるため。lefthook の既定では `**` が 1 階層以上の意味になり、ルート直下のファイルが検査されない。
@@ -84,9 +87,21 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
 
 正本の `ignorePaths` は `globRoot` を `${cwd}` にしているので、取り込んだ repo のルートから見たパスとして効く。
 
+検査の対象はすべてのファイル（`cspell "**"`）にする。cspell は TypeScript・Python・Ruby・シェルなど、ファイルの種類ごとの辞書を拡張子に応じて自動で使うので、コードを検査しても誤検知は少ない。バイナリ、`.gitignore` で除外したファイル、正本の `ignorePaths` に当たるファイルは読み飛ばす。
+
+lefthook では `--no-must-find-files` を付ける。コミットしたファイルがすべて読み飛ばされる（画像だけをコミットしたときなど）と、付けないと「対象が無い」として失敗する。
+
+日本語は、ひらがな・カタカナ・漢字を `ignoreRegExpList` で検査から外している。cspell には日本語の辞書がない。
+
 ### secretlint
 
 `--secretlintignore` は 1 つしか渡せない。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+
+### npm-package-json-lint
+
+どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` か固定か、git の依存か）は repo ごとに事情が違うので検査しない。
+
+`"**/package.json"` で渡すと、`node_modules` の中は自動で除外される。ファイルのパスを直接渡すとディレクトリとして扱われて失敗するので、lefthook でも package.json が変わったときに `check:package-json`（repo のすべての package.json）を動かす。
 
 ### commitlint
 

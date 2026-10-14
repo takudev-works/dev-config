@@ -53,6 +53,7 @@
     "markdownlint",
     "monorepo",
     "mypy",
+    "npmpackagejsonlintrc",
     "pipefail",
     "pycache",
     "pytest",
@@ -61,8 +62,10 @@
     "secretlintrc",
     "takudev",
     "Takuya",
+    "tfvars",
     "vcpu",
     "venv",
+    "vercel",
     "worktree"
   ]
 }

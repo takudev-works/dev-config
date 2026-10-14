@@ -12,7 +12,9 @@ pre-commit:
       glob: '**/*.md'
       run: bun markdownlint-cli2 --config base.markdownlint-cli2.jsonc {staged_files}
     cspell:
-      glob: '**/*.{md,json,jsonc,yml,yaml}'
-      run: bun cspell --no-progress --no-summary {staged_files}
+      run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
       run: bun secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore {staged_files}
+    package-json:
+      glob: '**/package.json'
+      run: bun run check:package-json
