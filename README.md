@@ -173,6 +173,7 @@ Conventional Commits の形（`feat: …` など）を検査する。`subject-ca
 | ワークフロー | 中身 |
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run check` を回す |
+| `.github/workflows/reusable-dev-config-review.yml` | 週 1 回など定期的に、repo の設定のうち dev-config と renovate-config の正本に重なっているものを Claude Code が探し、消す PR を出す |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
@@ -211,6 +212,26 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+```
+
+```yaml
+# .github/workflows/dev-config-review.yml
+name: dev-config review
+
+on:
+  schedule:
+    # 毎週月曜 9:30（日本時間）
+    - cron: '30 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  review:
+    uses: takudev-works/dev-config/.github/workflows/reusable-dev-config-review.yml@v3.1.0
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
 ```
 
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
