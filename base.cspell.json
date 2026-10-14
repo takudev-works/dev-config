@@ -4,6 +4,7 @@
   "language": "en",
   "globRoot": "${cwd}",
   "enableGlobDot": true,
+  "useGitignore": true,
   "ignorePaths": [
     "**/node_modules/**",
     "**/.venv/**",
