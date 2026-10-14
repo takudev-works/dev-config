@@ -1,4 +1,4 @@
-# lint-config
+# dev-config
 
 Takudev の lint 設定の正本。各 repo はこの repo を git の依存として入れ、各ツールに設定ファイルのパスを渡す。
 
@@ -23,9 +23,9 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 ```json
 {
   "devDependencies": {
-    "lint-config": "github:takudev-works/lint-config#v3.0.0"
+    "dev-config": "github:takudev-works/dev-config#v3.0.0"
   },
-  "prettier": "lint-config/base.prettierrc.json"
+  "prettier": "dev-config/base.prettierrc.json"
 }
 ```
 
@@ -39,14 +39,14 @@ glob_matcher: doublestar
 commit-msg:
   commands:
     commitlint:
-      run: bun commitlint --config node_modules/lint-config/base.commitlintrc.json --edit {1}
+      run: bun commitlint --config node_modules/dev-config/base.commitlintrc.json --edit {1}
 
 pre-commit:
   parallel: true
   commands:
     markdownlint:
       glob: '**/*.md'
-      run: bun markdownlint-cli2 --config node_modules/lint-config/base.markdownlint-cli2.jsonc {staged_files}
+      run: bun markdownlint-cli2 --config node_modules/dev-config/base.markdownlint-cli2.jsonc {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,tsx}'
       run: bun eslint {staged_files}
@@ -55,7 +55,7 @@ pre-commit:
     cspell:
       run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
-      run: bun secretlint --secretlintrc node_modules/lint-config/base.secretlintrc.json --secretlintignore node_modules/lint-config/base.secretlintignore {staged_files}
+      run: bun secretlint --secretlintrc node_modules/dev-config/base.secretlintrc.json --secretlintignore node_modules/dev-config/base.secretlintignore {staged_files}
     package-json:
       glob: '**/package.json'
       run: bun run check:package-json
@@ -77,7 +77,7 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 
 ```json
 {
-  "markdownlint.configFile": "${workspaceFolder}/node_modules/lint-config/base.markdownlint-cli2.jsonc"
+  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/base.markdownlint-cli2.jsonc"
 }
 ```
 
@@ -88,7 +88,7 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
 ```json
 {
   "version": "0.2",
-  "import": ["./node_modules/lint-config/base.cspell.json"],
+  "import": ["./node_modules/dev-config/base.cspell.json"],
   "ignorePaths": ["python/reference/**"],
   "words": ["<その repo だけの単語>"]
 }
@@ -112,7 +112,7 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 
 ```json
 {
-  "extends": "lint-config/base.tsconfig.json",
+  "extends": "dev-config/base.tsconfig.json",
   "compilerOptions": { "types": ["bun"] },
   "include": ["scripts/**/*.ts"]
 }
@@ -123,7 +123,7 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 repo の `eslint.config.mjs` で正本を読み、repo だけの除外や設定を後ろに足す。
 
 ```js
-import base from 'lint-config/base.eslint.config.mjs';
+import base from 'dev-config/base.eslint.config.mjs';
 
 export default [...base, { ignores: ['python/**'] }];
 ```
@@ -132,7 +132,7 @@ TypeScript と typescript-eslint の版は、この repo でそろえて上げ�
 
 ### Prettier
 
-package.json の `"prettier"` に `lint-config/base.prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
+package.json の `"prettier"` に `dev-config/base.prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
 
 Markdown は整形しない。Prettier は表の列を必ず揃えるが、日本語と数値が混ざる表は詰めた書き方のほうが読みやすい（markdownlint の MD060 を無効にしているのと同じ理由）。正本の `overrides` で `*.md` に `requirePragma` を付け、`@format` の印がある md だけを整形の対象にしている。md の検査は markdownlint に任せる。
 
