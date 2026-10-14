@@ -1,10 +1,44 @@
 {
-  "name": "markdownlint-config",
-  "version": "2.0.0",
+  "name": "dev-config",
+  "version": "3.0.0",
   "private": true,
-  "description": "Takudev の Markdown の lint 設定の正本",
+  "description": "Takudev の lint 設定の正本",
+  "license": "MIT",
   "files": [
-    "base.markdownlint-cli2.jsonc"
+    "base.commitlintrc.json",
+    "base.cspell.json",
+    "base.eslint.config.mjs",
+    "base.markdownlint-cli2.jsonc",
+    "base.npmpackagejsonlintrc.json",
+    "base.prettierrc.json",
+    "base.secretlintignore",
+    "base.secretlintrc.json",
+    "base.tsconfig.json"
   ],
-  "license": "MIT"
+  "scripts": {
+    "check": "run-p check:*",
+    "check:format": "prettier --check .",
+    "check:lint": "eslint .",
+    "check:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
+    "check:package-json": "npmPkgJsonLint --configFile base.npmpackagejsonlintrc.json \"**/package.json\"",
+    "check:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
+    "check:spell": "cspell --no-progress \"**\""
+  },
+  "dependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
+    "cspell": "^10.3.6",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "markdownlint-cli2": "^0.23.3",
+    "npm-package-json-lint": "^11.0.0",
+    "npm-run-all2": "^9.0.3",
+    "prettier": "^3.9.9",
+    "secretlint": "^13.0.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0"
+  },
+  "prettier": "./base.prettierrc.json"
 }

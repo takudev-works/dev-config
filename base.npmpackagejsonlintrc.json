@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "require-name": "error",
+    "name-format": "error",
+    "name-type": "error",
+    "version-type": "error",
+    "version-format": "error",
+    "type-type": "error",
+    "scripts-type": "error",
+    "dependencies-type": "error",
+    "devDependencies-type": "error",
+    "peerDependencies-type": "error",
+    "optionalDependencies-type": "error",
+    "require-private": "error",
+    "valid-values-private": ["error", [true]],
+    "no-duplicate-properties": "error",
+    "no-repeated-dependencies": "error",
+    "prefer-alphabetical-dependencies": "error",
+    "prefer-alphabetical-devDependencies": "error",
+    "prefer-alphabetical-peerDependencies": "error",
+    "prefer-alphabetical-optionalDependencies": "error"
+  }
+}

@@ -1,23 +1,73 @@
-# markdownlint-config
+# dev-config
 
-Takudev の Markdown の lint 設定の正本。各 repo は設定ファイルを持たず、この repo を git の依存として入れて、markdownlint-cli2 の `--config` と Cursor・VS Code の拡張に渡す。
+Takudev の lint 設定の正本。各 repo はこの repo を git の依存として入れ、各ツールに設定ファイルのパスを渡す。
 
-`base.markdownlint-cli2.jsonc` は markdownlint-cli2 の形式で、ルール（`config`）と、どの repo でも検査しないもの（`ignores`。`node_modules`、`.venv`、`dist`、キャッシュ類など）を持つ。
+| ファイル | ツール | 中身 |
+| --- | --- | --- |
+| `base.markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
+| `base.cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
+| `base.commitlintrc.json` | commitlint | Conventional Commits |
+| `base.secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
+| `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
+| `base.tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
+| `base.eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
+| `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
+| `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
+
+ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
 ## 使い方
+
+この repo を devDependencies に入れる。
 
 ```json
 {
   "devDependencies": {
-    "markdownlint-config": "github:takudev-works/markdownlint-config#v2.0.0"
+    "dev-config": "github:takudev-works/dev-config#v3.0.0"
   },
-  "scripts": {
-    "check:markdown": "markdownlint-cli2 --config node_modules/markdownlint-config/base.markdownlint-cli2.jsonc \"**/*.md\""
-  }
+  "prettier": "dev-config/base.prettierrc.json"
 }
 ```
 
-対象のファイルと、その repo だけで除外したいものは、各 repo のコマンドの引数で渡す（`#` で始まる glob が除外）。
+ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、ESLint と typescript-eslint、TypeScript、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+
+lefthook には、各ツールに正本のパスを渡すコマンドを書く。
+
+```yaml
+glob_matcher: doublestar
+
+commit-msg:
+  commands:
+    commitlint:
+      run: bun commitlint --config node_modules/dev-config/base.commitlintrc.json --edit {1}
+
+pre-commit:
+  parallel: true
+  commands:
+    markdownlint:
+      glob: '**/*.md'
+      run: bun markdownlint-cli2 --config node_modules/dev-config/base.markdownlint-cli2.jsonc {staged_files}
+    eslint:
+      glob: '**/*.{js,mjs,cjs,ts,tsx}'
+      run: bun eslint {staged_files}
+    prettier:
+      run: bun prettier --check --ignore-unknown {staged_files}
+    cspell:
+      run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
+    secretlint:
+      run: bun secretlint --secretlintrc node_modules/dev-config/base.secretlintrc.json --secretlintignore node_modules/dev-config/base.secretlintignore {staged_files}
+    package-json:
+      glob: '**/package.json'
+      run: bun run check:package-json
+```
+
+`glob_matcher: doublestar` は、`**/*.md` をルート直下の md にも一致させるため。lefthook の既定では `**` が 1 階層以上の意味になり、ルート直下のファイルが検査されない。
+
+lefthook の設定そのものを共有しない（`extends` や `remotes` を使わない）のは、それらが repo の `lefthook.yml` より後に読まれて上書きするため。repo ごとの除外を `lefthook.yml` に書けなくなる。
+
+### markdownlint
+
+その repo だけで除外したいものは、コマンドの引数で渡す（`#` で始まる glob が除外）。
 
 - `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
 - 対象を正本の `globs` に書かないのは、そうすると引数の除外（`#…`）が効かなくなるため
@@ -27,11 +77,129 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 
 ```json
 {
-  "markdownlint.configFile": "${workspaceFolder}/node_modules/markdownlint-config/base.markdownlint-cli2.jsonc"
+  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/base.markdownlint-cli2.jsonc"
 }
 ```
 
-## ルールの選び方
+### cspell
+
+cspell だけは repo に `cspell.json` を置き、正本を `import` する。エディタの拡張が repo の設定ファイルを探すためと、repo ごとの単語を持たせるため。
+
+```json
+{
+  "version": "0.2",
+  "import": ["./node_modules/dev-config/base.cspell.json"],
+  "ignorePaths": ["python/reference/**"],
+  "words": ["<その repo だけの単語>"]
+}
+```
+
+正本の `ignorePaths` は `globRoot` を `${cwd}` にしているので、取り込んだ repo のルートから見たパスとして効く。
+
+検査の対象はすべてのファイル（`cspell "**"`）にする。cspell は TypeScript・Python・Ruby・シェルなど、ファイルの種類ごとの辞書を拡張子に応じて自動で使うので、コードを検査しても誤検知は少ない。バイナリ、`.gitignore` で除外したファイル、正本の `ignorePaths` に当たるファイルは読み飛ばす。
+
+lefthook では `--no-must-find-files` を付ける。コミットしたファイルがすべて読み飛ばされる（画像だけをコミットしたときなど）と、付けないと「対象が無い」として失敗する。
+
+日本語は、ひらがな・カタカナ・漢字を `ignoreRegExpList` で検査から外している。cspell には日本語の辞書がない。
+
+### secretlint
+
+`--secretlintignore` は 1 つしか渡せない。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+
+### TypeScript
+
+repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`types` など repo ごとのものだけを書く。
+
+```json
+{
+  "extends": "dev-config/base.tsconfig.json",
+  "compilerOptions": { "types": ["bun"] },
+  "include": ["scripts/**/*.ts"]
+}
+```
+
+### ESLint
+
+repo の `eslint.config.mjs` で正本を読み、repo だけの除外や設定を後ろに足す。
+
+```js
+import base from 'dev-config/base.eslint.config.mjs';
+
+export default [...base, { ignores: ['python/**'] }];
+```
+
+TypeScript と typescript-eslint の版は、この repo でそろえて上げる。Expo のように、フレームワークが TypeScript や ESLint の設定を決めている package は、そちらに従う。
+
+### Prettier
+
+package.json の `"prettier"` に `dev-config/base.prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
+
+Markdown は整形しない。Prettier は表の列を必ず揃えるが、日本語と数値が混ざる表は詰めた書き方のほうが読みやすい（markdownlint の MD060 を無効にしているのと同じ理由）。正本の `overrides` で `*.md` に `requirePragma` を付け、`@format` の印がある md だけを整形の対象にしている。md の検査は markdownlint に任せる。
+
+除外は repo の `.gitignore` と `.prettierignore` に従う。lock ファイルなど Prettier が形式を知らないファイルは、`--ignore-unknown` で読み飛ばす。
+
+### npm-package-json-lint
+
+どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` か固定か、git の依存か）は repo ごとに事情が違うので検査しない。
+
+`"**/package.json"` で渡すと、`node_modules` の中は自動で除外される。ファイルのパスを直接渡すとディレクトリとして扱われて失敗するので、lefthook でも package.json が変わったときに `check:package-json`（repo のすべての package.json）を動かす。
+
+### commitlint
+
+`subject-case` は大文字だけと PascalCase の subject を禁じる。日本語の subject は通るが、`README を直す` のように大文字だけの英単語で始まると大文字だけと判定されて落ちる。
+
+## GitHub Actions の部品
+
+再利用できるワークフロー（`workflow_call`）を置いている。各 repo は、いつ動かすかと呼び出し先だけを書く。runner や action の版、条件はここで一元管理する。
+
+| ワークフロー | 中身 |
+| --- | --- |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run check` を回す |
+| `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
+
+```yaml
+# .github/workflows/validate.yml
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@v3.0.0
+```
+
+```yaml
+# .github/workflows/claude.yml
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened]
+
+jobs:
+  claude:
+    uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@v3.0.0
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+```
+
+- `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
+- 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
+- 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（例: `validate / validate`）になる。ブランチ保護で必須にする check もこの名前にする
+
+## ルールの選び方（markdownlint）
 
 `default: true` ですべてのルールを有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
 
@@ -44,8 +212,8 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 | MD060 | 無効 | 日本語と数値が混ざる表では、詰めた書き方のほうが読みやすい |
 | MD028、MD031、MD033、MD036、MD040、MD041、MD056 | 無効 | 書き方の好みの範囲で、検査する利点が小さい |
 
-ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
-
 ## 変更の流れ
 
-変更は PR で出し、merge したらタグ（`v2.1.0` など）を打つ。各 repo は Renovate などでタグを更新する。
+変更は PR で出し、merge したらタグ（`v3.1.0` など）を打つ。各 repo は Renovate などでタグを更新する。
+
+この repo 自身も同じ設定で検査する。`mise run setup` で依存と lefthook を入れる。
