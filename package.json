@@ -12,7 +12,7 @@
     "base.secretlintrc.json"
   ],
   "scripts": {
-    "check": "bun run check:markdown && bun run check:spell && bun run check:secrets",
+    "check": "run-p check:*",
     "check:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
     "check:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
     "check:spell": "cspell --no-progress \"**/*.{md,json,jsonc,yml,yaml}\""
@@ -23,6 +23,7 @@
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
     "cspell": "^10.3.6",
     "markdownlint-cli2": "^0.23.3",
+    "npm-run-all2": "^9.0.3",
     "secretlint": "^13.0.6"
   }
 }

@@ -3,6 +3,7 @@
   "version": "0.2",
   "language": "en",
   "globRoot": "${cwd}",
+  "enableGlobDot": true,
   "ignorePaths": [
     "**/node_modules/**",
     "**/.venv/**",
@@ -36,6 +37,7 @@
     "/[\\u3000-\\u303f]+/gu"
   ],
   "words": [
+    "anthropics",
     "bunfig",
     "bunx",
     "commitlint",
@@ -58,6 +60,7 @@
     "secretlintrc",
     "takudev",
     "Takuya",
+    "vcpu",
     "venv",
     "worktree"
   ]
