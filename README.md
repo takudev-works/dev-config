@@ -1,23 +1,61 @@
-# markdownlint-config
+# lint-config
 
-Takudev の Markdown の lint 設定の正本。各 repo は設定ファイルを持たず、この repo を git の依存として入れて、markdownlint-cli2 の `--config` と Cursor・VS Code の拡張に渡す。
+Takudev の lint 設定の正本。各 repo はこの repo を git の依存として入れ、各ツールに設定ファイルのパスを渡す。
 
-`base.markdownlint-cli2.jsonc` は markdownlint-cli2 の形式で、ルール（`config`）と、どの repo でも検査しないもの（`ignores`。`node_modules`、`.venv`、`dist`、キャッシュ類など）を持つ。
+| ファイル | ツール | 中身 |
+| --- | --- | --- |
+| `base.markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
+| `base.cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
+| `base.commitlintrc.json` | commitlint | Conventional Commits |
+| `base.secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
+| `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
+
+ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
 ## 使い方
+
+ツール本体と、この repo を devDependencies に入れる。
 
 ```json
 {
   "devDependencies": {
-    "markdownlint-config": "github:takudev-works/markdownlint-config#v2.0.0"
-  },
-  "scripts": {
-    "check:markdown": "markdownlint-cli2 --config node_modules/markdownlint-config/base.markdownlint-cli2.jsonc \"**/*.md\""
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
+    "cspell": "^10.3.6",
+    "lint-config": "github:takudev-works/lint-config#v3.0.0",
+    "markdownlint-cli2": "^0.23.3",
+    "secretlint": "^13.0.6"
   }
 }
 ```
 
-対象のファイルと、その repo だけで除外したいものは、各 repo のコマンドの引数で渡す（`#` で始まる glob が除外）。
+lefthook には、各ツールに正本のパスを渡すコマンドを書く。
+
+```yaml
+commit-msg:
+  commands:
+    commitlint:
+      run: bun commitlint --config node_modules/lint-config/base.commitlintrc.json --edit {1}
+
+pre-commit:
+  parallel: true
+  commands:
+    markdownlint:
+      glob: '**/*.md'
+      run: bun markdownlint-cli2 --config node_modules/lint-config/base.markdownlint-cli2.jsonc {staged_files}
+    cspell:
+      glob: '**/*.{md,json,jsonc,yml,yaml}'
+      run: bun cspell --no-progress --no-summary {staged_files}
+    secretlint:
+      run: bun secretlint --secretlintrc node_modules/lint-config/base.secretlintrc.json --secretlintignore node_modules/lint-config/base.secretlintignore {staged_files}
+```
+
+lefthook の設定そのものを共有しない（`extends` や `remotes` を使わない）のは、それらが repo の `lefthook.yml` より後に読まれて上書きするため。repo ごとの除外を `lefthook.yml` に書けなくなる。
+
+### markdownlint
+
+その repo だけで除外したいものは、コマンドの引数で渡す（`#` で始まる glob が除外）。
 
 - `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
 - 対象を正本の `globs` に書かないのは、そうすると引数の除外（`#…`）が効かなくなるため
@@ -27,11 +65,34 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 
 ```json
 {
-  "markdownlint.configFile": "${workspaceFolder}/node_modules/markdownlint-config/base.markdownlint-cli2.jsonc"
+  "markdownlint.configFile": "${workspaceFolder}/node_modules/lint-config/base.markdownlint-cli2.jsonc"
 }
 ```
 
-## ルールの選び方
+### cspell
+
+cspell だけは repo に `cspell.json` を置き、正本を `import` する。エディタの拡張が repo の設定ファイルを探すためと、repo ごとの単語を持たせるため。
+
+```json
+{
+  "version": "0.2",
+  "import": ["./node_modules/lint-config/base.cspell.json"],
+  "ignorePaths": ["python/reference/**"],
+  "words": ["refino"]
+}
+```
+
+正本の `ignorePaths` は `globRoot` を `${cwd}` にしているので、取り込んだ repo のルートから見たパスとして効く。
+
+### secretlint
+
+`--secretlintignore` は 1 つしか渡せない。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+
+### commitlint
+
+`subject-case` は大文字だけと PascalCase の subject を禁じる。日本語の subject は通るが、`README を直す` のように大文字だけの英単語で始まると大文字だけと判定されて落ちる。
+
+## ルールの選び方（markdownlint）
 
 `default: true` ですべてのルールを有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
 
@@ -44,8 +105,8 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 | MD060 | 無効 | 日本語と数値が混ざる表では、詰めた書き方のほうが読みやすい |
 | MD028、MD031、MD033、MD036、MD040、MD041、MD056 | 無効 | 書き方の好みの範囲で、検査する利点が小さい |
 
-ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
-
 ## 変更の流れ
 
-変更は PR で出し、merge したらタグ（`v2.1.0` など）を打つ。各 repo は Renovate などでタグを更新する。
+変更は PR で出し、merge したらタグ（`v3.1.0` など）を打つ。各 repo は Renovate などでタグを更新する。
+
+この repo 自身も同じ設定で検査する。`mise run setup` で依存と lefthook を入れる。

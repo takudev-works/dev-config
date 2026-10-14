@@ -1,0 +1,7 @@
+[tools]
+bun = "1.4.2"
+lefthook = "2.1.16"
+
+[tasks.setup]
+description = "Install dependencies and git hooks"
+run = ["bun install --frozen-lockfile", "lefthook install"]

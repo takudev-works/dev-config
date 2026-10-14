@@ -1,10 +1,28 @@
 {
-  "name": "markdownlint-config",
-  "version": "2.0.0",
+  "name": "lint-config",
+  "version": "3.0.0",
   "private": true,
-  "description": "Takudev の Markdown の lint 設定の正本",
+  "description": "Takudev の lint 設定の正本",
+  "license": "MIT",
   "files": [
-    "base.markdownlint-cli2.jsonc"
+    "base.commitlintrc.json",
+    "base.cspell.json",
+    "base.markdownlint-cli2.jsonc",
+    "base.secretlintignore",
+    "base.secretlintrc.json"
   ],
-  "license": "MIT"
+  "scripts": {
+    "check": "bun run check:markdown && bun run check:spell && bun run check:secrets",
+    "check:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
+    "check:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
+    "check:spell": "cspell --no-progress \"**/*.{md,json,jsonc,yml,yaml}\""
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
+    "cspell": "^10.3.6",
+    "markdownlint-cli2": "^0.23.3",
+    "secretlint": "^13.0.6"
+  }
 }
