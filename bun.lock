@@ -4,7 +4,7 @@
   "workspaces": {
     "": {
       "name": "lint-config",
-      "devDependencies": {
+      "dependencies": {
         "@commitlint/cli": "^21.2.3",
         "@commitlint/config-conventional": "^21.2.3",
         "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",

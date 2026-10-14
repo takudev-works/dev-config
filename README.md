@@ -14,21 +14,17 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 
 ## 使い方
 
-ツール本体と、この repo を devDependencies に入れる。
+この repo を devDependencies に入れる。
 
 ```json
 {
   "devDependencies": {
-    "@commitlint/cli": "^21.2.3",
-    "@commitlint/config-conventional": "^21.2.3",
-    "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
-    "cspell": "^10.3.6",
-    "lint-config": "github:takudev-works/lint-config#v3.0.0",
-    "markdownlint-cli2": "^0.23.3",
-    "secretlint": "^13.0.6"
+    "lint-config": "github:takudev-works/lint-config#v3.0.0"
   }
 }
 ```
+
+ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
