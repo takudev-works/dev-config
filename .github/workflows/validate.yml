@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bunx markdownlint-cli2 --config markdownlint.json "**/*.md"
+      - run: bunx markdownlint-cli2 --config base.markdownlint-cli2.jsonc "**/*.md"
