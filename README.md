@@ -12,12 +12,16 @@ Takudev の Markdown の lint 設定の正本。各 repo は設定ファイル�
     "markdownlint-config": "github:takudev-works/markdownlint-config#v2.0.0"
   },
   "scripts": {
-    "check:markdown": "markdownlint-cli2 --config node_modules/markdownlint-config/base.markdownlint-cli2.jsonc \"**/*.md\" \".github/**/*.md\""
+    "check:markdown": "markdownlint-cli2 --config node_modules/markdownlint-config/base.markdownlint-cli2.jsonc \"**/*.md\""
   }
 }
 ```
 
 対象のファイルと、その repo だけで除外したいものは、各 repo のコマンドの引数で渡す（`#` で始まる glob が除外）。
+
+- `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
+- 対象を正本の `globs` に書かないのは、そうすると引数の除外（`#…`）が効かなくなるため
+- lefthook のように検査するファイルを直接渡すときも、その repo だけの除外を引数で渡す。直接渡したファイルにも `#…` の除外は効く
 
 Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/settings.json` で同じファイルを渡す。
 
