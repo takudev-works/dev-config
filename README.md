@@ -148,6 +148,57 @@ Markdown は整形しない。Prettier は表の列を必ず揃えるが、日�
 
 `subject-case` は大文字だけと PascalCase の subject を禁じる。日本語の subject は通るが、`README を直す` のように大文字だけの英単語で始まると大文字だけと判定されて落ちる。
 
+## GitHub Actions の部品
+
+再利用できるワークフロー（`workflow_call`）を置いている。各 repo は、いつ動かすかと呼び出し先だけを書く。runner や action の版、条件はここで一元管理する。
+
+| ワークフロー | 中身 |
+| --- | --- |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run check` を回す |
+| `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
+
+```yaml
+# .github/workflows/validate.yml
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@v3.0.0
+```
+
+```yaml
+# .github/workflows/claude.yml
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened]
+
+jobs:
+  claude:
+    uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@v3.0.0
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+```
+
+- `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
+- 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
+- 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（例: `validate / validate`）になる。ブランチ保護で必須にする check もこの名前にする
+
 ## ルールの選び方（markdownlint）
 
 `default: true` ですべてのルールを有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
