@@ -9,6 +9,8 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 | `base.commitlintrc.json` | commitlint | Conventional Commits |
 | `base.secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
 | `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
+| `base.tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
+| `base.eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
 | `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
@@ -27,7 +29,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 }
 ```
 
-ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、ESLint と typescript-eslint、TypeScript、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
@@ -45,6 +47,9 @@ pre-commit:
     markdownlint:
       glob: '**/*.md'
       run: bun markdownlint-cli2 --config node_modules/lint-config/base.markdownlint-cli2.jsonc {staged_files}
+    eslint:
+      glob: '**/*.{js,mjs,cjs,ts,tsx}'
+      run: bun eslint {staged_files}
     prettier:
       run: bun prettier --check --ignore-unknown {staged_files}
     cspell:
@@ -100,6 +105,30 @@ lefthook では `--no-must-find-files` を付ける。コミットしたファ�
 ### secretlint
 
 `--secretlintignore` は 1 つしか渡せない。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+
+### TypeScript
+
+repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`types` など repo ごとのものだけを書く。
+
+```json
+{
+  "extends": "lint-config/base.tsconfig.json",
+  "compilerOptions": { "types": ["bun"] },
+  "include": ["scripts/**/*.ts"]
+}
+```
+
+### ESLint
+
+repo の `eslint.config.mjs` で正本を読み、repo だけの除外や設定を後ろに足す。
+
+```js
+import base from 'lint-config/base.eslint.config.mjs';
+
+export default [...base, { ignores: ['python/**'] }];
+```
+
+TypeScript と typescript-eslint の版は、この repo でそろえて上げる。Expo のように、フレームワークが TypeScript や ESLint の設定を決めている package は、そちらに従う。
 
 ### Prettier
 
