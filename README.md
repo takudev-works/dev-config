@@ -7,10 +7,10 @@ Takudev の Markdown の lint 設定の正本。各 repo は設定ファイル�
 ```json
 {
   "devDependencies": {
-    "markdownlint-config": "github:takudev-works/markdownlint-config#v1.0.0"
+    "markdownlint-config": "github:takudev-works/markdownlint-config#v1.0.1"
   },
   "scripts": {
-    "check:markdown": "markdownlint-cli2 --config node_modules/markdownlint-config/.markdownlint.json \"**/*.md\" \"#node_modules\""
+    "check:markdown": "markdownlint-cli2 --config node_modules/markdownlint-config/markdownlint.json \"**/*.md\" \"#node_modules\""
   }
 }
 ```
@@ -29,6 +29,8 @@ Takudev の Markdown の lint 設定の正本。各 repo は設定ファイル�
 | MD034 | 無効 | URL をそのまま書くことを許す |
 | MD060 | 無効 | 日本語と数値が混ざる表では、詰めた書き方のほうが読みやすい |
 | MD028、MD031、MD033、MD036、MD040、MD041、MD056 | 無効 | 書き方の好みの範囲で、検査する利点が小さい |
+
+ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため。
 
 ## 変更の流れ
 
