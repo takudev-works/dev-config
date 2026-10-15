@@ -18,13 +18,13 @@
     "base.vitest.config.mjs"
   ],
   "scripts": {
-    "check": "run-p check:*",
-    "check:format": "prettier --check .",
-    "check:lint": "eslint .",
-    "check:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
-    "check:package-json": "npmPkgJsonLint --configFile base.npmpackagejsonlintrc.json \"**/package.json\"",
-    "check:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
-    "check:spell": "cspell --no-progress \"**\""
+    "validate": "run-p validate:*",
+    "validate:format": "prettier --check .",
+    "validate:lint": "eslint .",
+    "validate:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
+    "validate:package-json": "npmPkgJsonLint --configFile base.npmpackagejsonlintrc.json \"**/package.json\"",
+    "validate:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
+    "validate:spell": "cspell --no-progress \"**\""
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",
