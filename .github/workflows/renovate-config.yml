@@ -1,0 +1,27 @@
+name: Renovate config
+
+# 毎回は回さない。renovate-config-validator は依存が大きく、検査するのは Renovate の設定ファイルだけなので。
+# paths で動くかが決まるので、必須の check にはしない（関係ない PR で check が出ず merge できなくなる）
+on:
+  pull_request:
+    paths:
+      - 'renovate/**'
+      - 'renovate.json'
+      - '.github/workflows/renovate-config.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'renovate/**'
+      - 'renovate.json'
+      - '.github/workflows/renovate-config.yml'
+
+jobs:
+  validate:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+        with:
+          experimental: true
+      - run: bunx --package renovate renovate-config-validator renovate/default.json renovate.json
