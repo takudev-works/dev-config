@@ -5,13 +5,13 @@ name: Renovate config
 on:
   pull_request:
     paths:
-      - 'renovate/**'
+      - 'base.renovate.json'
       - 'renovate.json'
       - '.github/workflows/renovate-config.yml'
   push:
     branches: [main]
     paths:
-      - 'renovate/**'
+      - 'base.renovate.json'
       - 'renovate.json'
       - '.github/workflows/renovate-config.yml'
 
@@ -24,4 +24,4 @@ jobs:
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         with:
           experimental: true
-      - run: bunx --package renovate renovate-config-validator renovate/default.json renovate.json
+      - run: bunx --package renovate renovate-config-validator base.renovate.json renovate.json
