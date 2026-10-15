@@ -36,7 +36,7 @@ jobs:
                - `renovate.json` の設定や `packageRules` のうち、renovate-config の preset にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
             4. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
-            5. `bun run check` が通ることを確かめる
+            5. `bun run validate` が通ることを確かめる
             6. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、既定のブランチに向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く
             7. 消すものがなければ、PR を作らずに終わる
 
@@ -46,4 +46,4 @@ jobs:
             - 既定のブランチに直接 push しない
             - 設定を消す以外の変更（新しい設定を足す、版を上げるなど）はしない
           claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run check*),Bash(bun install*)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run validate*),Bash(bun install*)"

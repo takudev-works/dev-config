@@ -13,4 +13,4 @@ jobs:
         with:
           experimental: true
       - run: bun install --frozen-lockfile
-      - run: bun run check
+      - run: bun run validate

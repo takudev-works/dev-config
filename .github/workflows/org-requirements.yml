@@ -1,4 +1,4 @@
-name: validate
+name: Org Requirements
 
 on:
   pull_request:
@@ -6,5 +6,5 @@ on:
     branches: [main]
 
 jobs:
-  validate:
+  dev-config:
     uses: ./.github/workflows/reusable-validate.yml

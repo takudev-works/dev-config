@@ -59,7 +59,7 @@ pre-commit:
       run: bun secretlint --secretlintrc node_modules/dev-config/base.secretlintrc.json --secretlintignore node_modules/dev-config/base.secretlintignore {staged_files}
     package-json:
       glob: '**/package.json'
-      run: bun run check:package-json
+      run: bun run validate:package-json
 ```
 
 `glob_matcher: doublestar` は、`**/*.md` をルート直下の md にも一致させるため。lefthook の既定では `**` が 1 階層以上の意味になり、ルート直下のファイルが検査されない。
@@ -160,7 +160,7 @@ Markdown は整形しない。Prettier は表の列を必ず揃えるが、日�
 
 どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` か固定か、git の依存か）は repo ごとに事情が違うので検査しない。
 
-`"**/package.json"` で渡すと、`node_modules` の中は自動で除外される。ファイルのパスを直接渡すとディレクトリとして扱われて失敗するので、lefthook でも package.json が変わったときに `check:package-json`（repo のすべての package.json）を動かす。
+`"**/package.json"` で渡すと、`node_modules` の中は自動で除外される。ファイルのパスを直接渡すとディレクトリとして扱われて失敗するので、lefthook でも package.json が変わったときに `validate:package-json`（repo のすべての package.json）を動かす。
 
 ### commitlint
 
@@ -172,13 +172,13 @@ Conventional Commits の形（`feat: …` など）を検査する。`subject-ca
 
 | ワークフロー | 中身 |
 | --- | --- |
-| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run check` を回す |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す |
 | `.github/workflows/reusable-dev-config-review.yml` | 週 1 回など定期的に、repo の設定のうち dev-config と renovate-config の正本に重なっているものを Claude Code が探し、消す PR を出す |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
-# .github/workflows/validate.yml
-name: validate
+# .github/workflows/org-requirements.yml
+name: Org Requirements
 
 on:
   pull_request:
@@ -186,8 +186,8 @@ on:
     branches: [main]
 
 jobs:
-  validate:
-    uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@v3.0.0
+  dev-config:
+    uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@v4.0.0
 ```
 
 ```yaml
@@ -206,7 +206,7 @@ on:
 
 jobs:
   claude:
-    uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@v3.0.0
+    uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@v4.0.0
     secrets: inherit
     permissions:
       contents: write
@@ -226,7 +226,7 @@ on:
 
 jobs:
   review:
-    uses: takudev-works/dev-config/.github/workflows/reusable-dev-config-review.yml@v3.1.0
+    uses: takudev-works/dev-config/.github/workflows/reusable-dev-config-review.yml@v4.0.0
     secrets: inherit
     permissions:
       contents: write
@@ -236,7 +236,7 @@ jobs:
 
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
-- 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（例: `validate / validate`）になる。ブランチ保護で必須にする check もこの名前にする
+- 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 
 ## ルールの選び方（markdownlint）
 
