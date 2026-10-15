@@ -279,6 +279,8 @@ jobs:
 
 ## 変更の流れ
 
-変更は PR で出し、merge したらタグ（`v3.1.0` など）を打つ。各 repo は Renovate などでタグを更新する。
+変更は PR で出す。版を上げるときは、PR で package.json の `version` を上げ、merge したそのコミットに同じ版のタグ（`v4.1.0` など）を打つ。タグを push すると `.github/workflows/release-tag.yml` が、タグと package.json の版が一致するかを確かめる。各 repo は Renovate などでタグを更新する。
+
+v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打った。各 repo がタグのコミットの SHA を参照しているので、打ち直していない。
 
 この repo 自身も同じ設定で検査する。`mise run setup` で依存と lefthook を入れる。
