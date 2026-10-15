@@ -12,7 +12,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 | `base.tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
 | `base.eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
 | `base.vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
-| `renovate/default.json` | Renovate | 各 repo の `renovate.json` から読む preset |
+| `base.renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset |
 | `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
@@ -164,11 +164,11 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>takudev-works/dev-config//renovate/default"]
+  "extends": ["github>takudev-works/dev-config:base.renovate"]
 }
 ```
 
-`github>takudev-works/dev-config//renovate/default` は、この repo の main の `renovate/default.json` を指す。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
+`github>takudev-works/dev-config:base.renovate` は、この repo の main の `base.renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
 
 | 設定 | 中身 |
 | --- | --- |
@@ -180,7 +180,7 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | TypeScript | 7 未満に止める。typescript-eslint が TS 7 にまだ対応していないため |
 | `dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない |
 
-設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れず、`renovate/**` か `renovate.json` が変わった PR でだけ `.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
+設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れず、`base.renovate.json` か `renovate.json` が変わった PR でだけ `.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
 ### npm-package-json-lint
 

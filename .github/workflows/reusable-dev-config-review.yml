@@ -28,12 +28,12 @@ jobs:
             この repo の設定のうち、takudev-works/dev-config の正本と重なっているものを消す PR を出してください。
 
             1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config と重なる設定を消す in:title" --state open` で確かめる。開いていれば何もせずに終わる
-            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/dev-config` にある（README.md に各ファイルの役割がある）。Renovate の preset は `node_modules/dev-config/renovate/default.json` にある
+            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/dev-config` にある（README.md に各ファイルの役割がある）。Renovate の preset は `node_modules/dev-config/base.renovate.json` にある
             3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
                - `cspell.json` の `words` や `ignorePaths` のうち、`node_modules/dev-config/base.cspell.json` にあるもの
                - `eslint.config.*` の除外のうち、`node_modules/dev-config/base.eslint.config.mjs` にあるもの
                - `.secretlintignore` の行のうち、`node_modules/dev-config/base.secretlintignore` にあるもの（repo が独自の `.secretlintignore` を持つときだけ）
-               - `renovate.json` の設定や `packageRules` のうち、`node_modules/dev-config/renovate/default.json` にあるもの
+               - `renovate.json` の設定や `packageRules` のうち、`node_modules/dev-config/base.renovate.json` にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
             4. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
             5. `bun run validate` が通ることを確かめる

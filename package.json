@@ -11,12 +11,12 @@
     "base.markdownlint-cli2.jsonc",
     "base.npmpackagejsonlintrc.json",
     "base.prettierrc.json",
+    "base.renovate.json",
     "base.secretlintignore",
     "base.secretlintrc.json",
     "base.tsconfig.json",
     "base.vitest.config.d.mts",
-    "base.vitest.config.mjs",
-    "renovate/default.json"
+    "base.vitest.config.mjs"
   ],
   "scripts": {
     "validate": "run-p validate:*",
