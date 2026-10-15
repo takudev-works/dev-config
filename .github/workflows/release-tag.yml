@@ -1,0 +1,21 @@
+name: Release tag
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  version:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: タグと package.json の版が一致するかを確かめる
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(jq -r .version package.json)
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::タグ $TAG と package.json の版 $version が一致しない。package.json の版を上げる PR を merge してから、そのコミットにタグを打つ"
+            exit 1
+          fi
