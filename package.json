@@ -15,7 +15,8 @@
     "base.secretlintrc.json",
     "base.tsconfig.json",
     "base.vitest.config.d.mts",
-    "base.vitest.config.mjs"
+    "base.vitest.config.mjs",
+    "renovate/default.json"
   ],
   "scripts": {
     "validate": "run-p validate:*",

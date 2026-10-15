@@ -12,6 +12,7 @@ Takudev の lint 設定の正本。各 repo はこの repo を git の依存と�
 | `base.tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
 | `base.eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
 | `base.vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
+| `renovate/default.json` | Renovate | 各 repo の `renovate.json` から読む preset |
 | `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
@@ -156,6 +157,31 @@ Markdown は整形しない。Prettier は表の列を必ず揃えるが、日�
 
 除外は repo の `.gitignore` と `.prettierignore` に従う。lock ファイルなど Prettier が形式を知らないファイルは、`--ignore-unknown` で読み飛ばす。
 
+### Renovate
+
+repo の `renovate.json` で preset を読み、repo だけの事情（base のブランチ、ランタイムの制約、特定のパッケージの上限など）だけを書く。
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>takudev-works/dev-config//renovate/default"]
+}
+```
+
+`github>takudev-works/dev-config//renovate/default` は、この repo の main の `renovate/default.json` を指す。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
+
+| 設定 | 中身 |
+| --- | --- |
+| 実行の時間 | 平日の 9 時より前（日本時間）。lock ファイルの更新は月曜の 9 時より前 |
+| PR | ラベル `dependencies`、レビュアーと担当は `t-i-0414`、コミットメッセージの頭に `chore:`、同時に開く PR は 5 本まで |
+| 上げ方 | 公開から 7 日たった版だけを上げる。範囲指定（`^` など）の下限も上げる |
+| まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる |
+| major | Dependency Dashboard で承認してから PR を出す |
+| TypeScript | 7 未満に止める。typescript-eslint が TS 7 にまだ対応していないため |
+| `dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない |
+
+設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れず、`renovate/**` か `renovate.json` が変わった PR でだけ `.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
+
 ### npm-package-json-lint
 
 どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` か固定か、git の依存か）は repo ごとに事情が違うので検査しない。
@@ -173,7 +199,7 @@ Conventional Commits の形（`feat: …` など）を検査する。`subject-ca
 | ワークフロー | 中身 |
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す |
-| `.github/workflows/reusable-dev-config-review.yml` | 週 1 回など定期的に、repo の設定のうち dev-config と renovate-config の正本に重なっているものを Claude Code が探し、消す PR を出す |
+| `.github/workflows/reusable-dev-config-review.yml` | 週 1 回など定期的に、repo の設定のうち dev-config の正本に重なっているものを Claude Code が探し、消す PR を出す |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
