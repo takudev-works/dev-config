@@ -1,31 +1,22 @@
 {
   "name": "dev-config",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "private": true,
   "description": "Takudev の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
   "files": [
-    "base.commitlintrc.json",
-    "base.cspell.json",
-    "base.eslint.config.mjs",
-    "base.markdownlint-cli2.jsonc",
-    "base.npmpackagejsonlintrc.json",
-    "base.prettierrc.json",
-    "base.renovate.json",
-    "base.secretlintignore",
-    "base.secretlintrc.json",
-    "base.tsconfig.json",
-    "base.vitest.config.d.mts",
-    "base.vitest.config.mjs"
+    "src"
   ],
   "scripts": {
     "validate": "run-p validate:*",
     "validate:format": "prettier --check .",
     "validate:lint": "eslint .",
-    "validate:markdown": "markdownlint-cli2 --config base.markdownlint-cli2.jsonc \"**/*.md\"",
-    "validate:package-json": "npmPkgJsonLint --configFile base.npmpackagejsonlintrc.json \"**/package.json\"",
-    "validate:secrets": "secretlint --secretlintrc base.secretlintrc.json --secretlintignore base.secretlintignore \"**/*\"",
-    "validate:spell": "cspell --no-progress \"**\""
+    "validate:markdown": "markdownlint-cli2 --config src/markdownlint-cli2.jsonc \"**/*.md\"",
+    "validate:package-json": "npmPkgJsonLint --configFile src/npmpackagejsonlintrc.json \"**/package.json\"",
+    "validate:secrets": "secretlint --secretlintrc src/secretlintrc.json --secretlintignore src/secretlintignore \"**/*\"",
+    "validate:spell": "cspell --no-progress \"**\"",
+    "validate:text": "textlint --config src/textlintrc.json \"**/*.md\"",
+    "validate:type": "tsc"
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",
@@ -41,9 +32,12 @@
     "npm-run-all2": "^9.0.3",
     "prettier": "^3.9.9",
     "secretlint": "^13.0.6",
+    "textlint": "^15.8.0",
+    "textlint-rule-preset-ja-technical-writing": "^12.0.2",
+    "textlint-rule-prh": "^6.1.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.0",
     "vitest": "^4.1.11"
   },
-  "prettier": "./base.prettierrc.json"
+  "prettier": "./src/prettierrc.json"
 }

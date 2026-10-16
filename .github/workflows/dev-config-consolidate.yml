@@ -1,0 +1,77 @@
+name: dev-config consolidate
+
+on:
+  schedule:
+    # 毎週月曜 10:00（日本時間）。各 repo の dev-config review（9:30）の後
+    - cron: '0 1 * * 1'
+  workflow_dispatch:
+
+jobs:
+  consolidate:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
+        with:
+          experimental: true
+      - run: bun install --frozen-lockfile
+      # GITHUB_TOKEN はこの repo しか読めないので、ほかの private repo を読むために組織の GitHub App のトークンを使う。
+      # PR は Claude の GitHub App で出す（GITHUB_TOKEN で作った PR では CI が動かない）ので、このトークンは clone にだけ使う
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: read
+      - name: takudev-works の repo を clone する
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/repos"
+          gh repo list "$OWNER" --no-archived --limit 200 --json name --jq '.[].name' |
+            grep -vx dev-config |
+            while read -r name; do
+              gh repo clone "$OWNER/$name" "$RUNNER_TEMP/repos/$name" -- --depth 1 --quiet
+            done
+          ls "$RUNNER_TEMP/repos"
+      - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            REPOS_DIR: ${{ runner.temp }}/repos
+
+            takudev-works の各 repo の設定のうち、2 つ以上の repo が同じ内容を書いているものを探し、dev-config の正本（`src/`）に寄せる PR を出してください。
+
+            1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config に寄せる in:title" --state open` で確かめる。開いていれば何もせずに終わる
+            2. この repo の README.md を読み、`src/` の各ファイルの役割と、各 repo でどう読み込まれるかを知る
+            3. REPOS_DIR の下に、takudev-works の各 repo が clone してある。各 repo の設定のうち、2 つ以上の repo で同じ内容を書いているものを探す。例:
+               - `cspell.json` の `words` や `ignorePaths`
+               - `eslint.config.*` の除外や設定
+               - `.secretlintignore` の行、`.textlintignore` の行
+               - `renovate.json` の設定や `packageRules`
+               - `tsconfig*.json` の `compilerOptions`
+               - `lefthook.yml` や package.json の scripts のうち、README の例に無いもの
+            4. どの repo にも当てはまる理由があるものだけを `src/` の正本に足す。特定の repo の事情（その repo のディレクトリ名、使っているフレームワークだけの設定など）は寄せない。判断に迷うものは足さず、PR の本文に「確かめてほしいこと」として書く
+            5. 正本に足したものに README の説明が要れば、README も直す
+            6. `bun run validate` が通ることを確かめる
+            7. 足したものがあれば、`chore/dev-config-consolidate-<日付>` のブランチを作ってコミットし、main に向けて PR を 1 本出す。題名は「feat: 各 repo に重なる設定を dev-config に寄せる」。本文には、足したものごとに、どの repo のどのファイルに書かれていたかを書く。各 repo の重複は、新しい版が入ったあとに各 repo の dev-config review が消す
+            8. 足すものがなければ、PR を作らずに終わる
+
+            守ること:
+            - REPOS_DIR の下の repo は読むだけにする。変更も push もしない
+            - コミットメッセージと PR の題名は Conventional Commits の形で、日本語で書く
+            - main に直接 push しない
+            - package.json の版は上げない。版は人が上げる
+          claude_args: |
+            --add-dir ${{ runner.temp }}/repos
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run validate*),Bash(bun install*)"
