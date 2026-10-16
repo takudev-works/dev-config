@@ -15,6 +15,7 @@ Takudev の各 repo で共通に使う開発の設定と CI のワークフロ�
 | `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset |
 | `src/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `src/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
+| `src/textlintignore` | textlint | どの repo でも検査しないもの |
 | `src/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
 | `src/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
 
@@ -61,7 +62,7 @@ pre-commit:
       run: bun markdownlint-cli2 --config node_modules/dev-config/src/markdownlint-cli2.jsonc {staged_files}
     textlint:
       glob: '**/*.md'
-      run: bun textlint --config node_modules/dev-config/src/textlintrc.json {staged_files}
+      run: bun textlint --config node_modules/dev-config/src/textlintrc.json --ignore-path node_modules/dev-config/src/textlintignore {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,tsx}'
       run: bun eslint {staged_files}
@@ -103,12 +104,14 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 ```json
 {
   "scripts": {
-    "validate:text": "textlint --config node_modules/dev-config/src/textlintrc.json \"**/*.md\""
+    "validate:text": "textlint --config node_modules/dev-config/src/textlintrc.json --ignore-path node_modules/dev-config/src/textlintignore \"**/*.md\""
   }
 }
 ```
 
-`node_modules` の中は自動で除外される。その repo だけで除外したいものは、repo の `.textlintignore` に書く。
+textlint は `.gitignore` を見ないので、`.venv` や `.ruby-lsp` のように手元にだけある依存の md も検査してしまう。そのため、どの repo でも検査しないものを `src/textlintignore` で渡す。
+
+`--ignore-path` は 1 つしか渡せない（secretlint の `--secretlintignore` と同じ）。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
 
 preset-ja-technical-writing のうち、次のルールを変えている。ほかは既定のまま使う。
 
@@ -276,6 +279,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
 ```
 
 ```yaml
@@ -301,6 +305,7 @@ jobs:
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
+- Claude Code を動かすワークフローには `id-token: write` が要る。`claude-code-action` が、Claude の GitHub App のトークンを OIDC で取るため。無いと「Could not fetch an OIDC token」で失敗する
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 
 ## ルールの選び方（markdownlint）

@@ -13,7 +13,7 @@ pre-commit:
       run: bun markdownlint-cli2 --config src/markdownlint-cli2.jsonc {staged_files}
     textlint:
       glob: '**/*.md'
-      run: bun textlint --config src/textlintrc.json {staged_files}
+      run: bun textlint --config src/textlintrc.json --ignore-path src/textlintignore {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,tsx}'
       run: bun eslint {staged_files}
