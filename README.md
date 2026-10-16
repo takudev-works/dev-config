@@ -209,8 +209,6 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 
 `github>takudev-works/dev-config//src/renovate` は、この repo の main の `src/renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
 
-ルートの `base.renovate.json` は、v4 までの参照（`github>takudev-works/dev-config:base.renovate`）のまま残っている repo のためのもので、`src/renovate.json` を読むだけ。どの repo も新しい参照に変えたら消す。
-
 | 設定 | 中身 |
 | --- | --- |
 | 実行の時間 | 平日の 9 時より前（日本時間）。lock ファイルの更新は月曜の 9 時より前 |
