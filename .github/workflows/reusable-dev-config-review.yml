@@ -32,7 +32,7 @@ jobs:
             3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
                - `cspell.json` の `words` や `ignorePaths` のうち、`node_modules/dev-config/src/cspell.json` にあるもの
                - `eslint.config.*` の除外のうち、`node_modules/dev-config/src/eslint.config.mjs` にあるもの
-               - `.secretlintignore` の行のうち、`node_modules/dev-config/src/secretlintignore` にあるもの（repo が独自の `.secretlintignore` を持つときだけ）
+               - `.secretlintignore` の行のうち、`node_modules/dev-config/src/secretlintignore` にあるもの（repo が独自の `.secretlintignore` を持つときだけ）。`.textlintignore` と `node_modules/dev-config/src/textlintignore` も同じ
                - `renovate.json` の設定や `packageRules` のうち、`node_modules/dev-config/src/renovate.json` にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
             4. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
