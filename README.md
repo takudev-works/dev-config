@@ -279,6 +279,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
 ```
 
 ```yaml
@@ -304,6 +305,7 @@ jobs:
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
+- Claude Code を動かすワークフローには `id-token: write` が要る。`claude-code-action` が、Claude の GitHub App のトークンを OIDC で取るため。無いと「Could not fetch an OIDC token」で失敗する
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 
 ## ルールの選び方（markdownlint）
