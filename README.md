@@ -4,17 +4,21 @@ Takudev の各 repo で共通に使う開発の設定と CI のワークフロ�
 
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
-| `base.markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
-| `base.cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
-| `base.commitlintrc.json` | commitlint | Conventional Commits |
-| `base.secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
-| `base.secretlintignore` | secretlint | どの repo でも検査しないもの |
-| `base.tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
-| `base.eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
-| `base.vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
-| `base.renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset |
-| `base.prettierrc.json` | Prettier | 書式。Markdown は整形しない |
-| `base.npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
+| `src/markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
+| `src/cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
+| `src/commitlintrc.json` | commitlint | Conventional Commits |
+| `src/secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
+| `src/secretlintignore` | secretlint | どの repo でも検査しないもの |
+| `src/tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
+| `src/eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
+| `src/vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
+| `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset |
+| `src/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
+| `src/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
+| `src/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
+| `src/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
+
+正本は `src/` に置く。ルートには、この repo 自身を検査するための設定を置く。
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
@@ -22,16 +26,22 @@ Takudev の各 repo で共通に使う開発の設定と CI のワークフロ�
 
 この repo を devDependencies に入れる。
 
+`<タグ>` には最新のタグを書く。最新のタグと、そのコミットの SHA（ワークフローの呼び出し先に使う）は次で分かる。
+
+```sh
+gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)"'
+```
+
 ```json
 {
   "devDependencies": {
-    "dev-config": "github:takudev-works/dev-config#v3.0.0"
+    "dev-config": "github:takudev-works/dev-config#<タグ>"
   },
-  "prettier": "dev-config/base.prettierrc.json"
+  "prettier": "dev-config/src/prettierrc.json"
 }
 ```
 
-ツール本体（markdownlint-cli2、cspell、commitlint、secretlint、npm-package-json-lint、Prettier、ESLint と typescript-eslint、TypeScript、Vitest と coverage-v8、npm-run-all2）は、この repo の `dependencies` に入れてある。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
 lefthook には、各ツールに正本のパスを渡すコマンドを書く。
 
@@ -41,14 +51,17 @@ glob_matcher: doublestar
 commit-msg:
   commands:
     commitlint:
-      run: bun commitlint --config node_modules/dev-config/base.commitlintrc.json --edit {1}
+      run: bun commitlint --config node_modules/dev-config/src/commitlintrc.json --edit {1}
 
 pre-commit:
   parallel: true
   commands:
     markdownlint:
       glob: '**/*.md'
-      run: bun markdownlint-cli2 --config node_modules/dev-config/base.markdownlint-cli2.jsonc {staged_files}
+      run: bun markdownlint-cli2 --config node_modules/dev-config/src/markdownlint-cli2.jsonc {staged_files}
+    textlint:
+      glob: '**/*.md'
+      run: bun textlint --config node_modules/dev-config/src/textlintrc.json {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,tsx}'
       run: bun eslint {staged_files}
@@ -57,7 +70,7 @@ pre-commit:
     cspell:
       run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
-      run: bun secretlint --secretlintrc node_modules/dev-config/base.secretlintrc.json --secretlintignore node_modules/dev-config/base.secretlintignore {staged_files}
+      run: bun secretlint --secretlintrc node_modules/dev-config/src/secretlintrc.json --secretlintignore node_modules/dev-config/src/secretlintignore {staged_files}
     package-json:
       glob: '**/package.json'
       run: bun run validate:package-json
@@ -79,9 +92,32 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 
 ```json
 {
-  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/base.markdownlint-cli2.jsonc"
+  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/src/markdownlint-cli2.jsonc"
 }
 ```
+
+### textlint
+
+日本語の文章を検査する。cspell は日本語を検査から外しているので、日本語はこちらで見る。
+
+```json
+{
+  "scripts": {
+    "validate:text": "textlint --config node_modules/dev-config/src/textlintrc.json \"**/*.md\""
+  }
+}
+```
+
+`node_modules` の中は自動で除外される。その repo だけで除外したいものは、repo の `.textlintignore` に書く。
+
+preset-ja-technical-writing のうち、次のルールを変えている。ほかは既定のまま使う。
+
+| ルール | 設定 | 理由 |
+| --- | --- | --- |
+| sentence-length | 150 文字まで（既定は 100） | 表の行や、パスとコマンドを含む文が長くなりやすい |
+| no-exclamation-question-mark | 無効 | Claude への指示や問いかけで `?` を使う |
+
+prh の辞書 `src/prh.yml` には、表記を 1 つに決めた用語を足していく。辞書に無い用語を自分で作らない（組織の「文書スタイル」）ことを、表記のレベルで守らせる。
 
 ### cspell
 
@@ -90,7 +126,7 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
 ```json
 {
   "version": "0.2",
-  "import": ["./node_modules/dev-config/base.cspell.json"],
+  "import": ["./node_modules/dev-config/src/cspell.json"],
   "ignorePaths": ["python/reference/**"],
   "words": ["<その repo だけの単語>"]
 }
@@ -110,11 +146,11 @@ lefthook では `--no-must-find-files` を付ける。コミットしたファ�
 
 ### TypeScript
 
-repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`types` など repo ごとのものだけを書く。
+repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`types` など repo ごとのものだけを書く。TS か、型を検査したい JS があれば、`"validate:type": "tsc"` を足す。
 
 ```json
 {
-  "extends": "dev-config/base.tsconfig.json",
+  "extends": "dev-config/src/tsconfig.json",
   "compilerOptions": { "types": ["bun"] },
   "include": ["scripts/**/*.ts"]
 }
@@ -125,7 +161,7 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 repo の `eslint.config.mjs` で正本を読み、repo だけの除外や設定を後ろに足す。
 
 ```js
-import base from 'dev-config/base.eslint.config.mjs';
+import base from 'dev-config/src/eslint.config.mjs';
 
 export default [...base, { ignores: ['python/**'] }];
 ```
@@ -138,7 +174,7 @@ TS のある repo にはテストを書き、coverage の閾値（4 つの指標
 
 ```ts
 import { defineConfig } from 'vitest/config';
-import { coverage } from 'dev-config/base.vitest.config.mjs';
+import { coverage } from 'dev-config/src/vitest.config.mjs';
 
 export default defineConfig({
   test: {
@@ -147,11 +183,11 @@ export default defineConfig({
 });
 ```
 
-足すものがなければ、`export { default } from 'dev-config/base.vitest.config.mjs';` だけでよい。`base.vitest.config.d.mts` は、TS から読むときの型の定義。
+足すものがなければ、`export { default } from 'dev-config/src/vitest.config.mjs';` だけでよい。`src/vitest.config.d.mts` は、TS から読むときの型の定義。
 
 ### Prettier
 
-package.json の `"prettier"` に `dev-config/base.prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
+package.json の `"prettier"` に `dev-config/src/prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
 
 Markdown は整形しない。Prettier は表の列を必ず揃えるが、日本語と数値が混ざる表は詰めた書き方のほうが読みやすい（markdownlint の MD060 を無効にしているのと同じ理由）。正本の `overrides` で `*.md` に `requirePragma` を付け、`@format` の印がある md だけを整形の対象にしている。md の検査は markdownlint に任せる。
 
@@ -164,11 +200,13 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>takudev-works/dev-config:base.renovate"]
+  "extends": ["github>takudev-works/dev-config//src/renovate"]
 }
 ```
 
-`github>takudev-works/dev-config:base.renovate` は、この repo の main の `base.renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
+`github>takudev-works/dev-config//src/renovate` は、この repo の main の `src/renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
+
+ルートの `base.renovate.json` は、v4 までの参照（`github>takudev-works/dev-config:base.renovate`）のまま残っている repo のためのもので、`src/renovate.json` を読むだけ。どの repo も新しい参照に変えたら消す。
 
 | 設定 | 中身 |
 | --- | --- |
@@ -180,11 +218,11 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | TypeScript | 7 未満に止める。typescript-eslint が TS 7 にまだ対応していないため |
 | `dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない |
 
-設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れず、`base.renovate.json` か `renovate.json` が変わった PR でだけ `.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
+設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れない。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
 ### npm-package-json-lint
 
-どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` か固定か、git の依存か）は repo ごとに事情が違うので検査しない。
+どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` と固定のどちらにするか、git の依存にするか）は repo ごとに事情が違うので検査しない。
 
 `"**/package.json"` で渡すと、`node_modules` の中は自動で除外される。ファイルのパスを直接渡すとディレクトリとして扱われて失敗するので、lefthook でも package.json が変わったときに `validate:package-json`（repo のすべての package.json）を動かす。
 
@@ -213,7 +251,7 @@ on:
 
 jobs:
   dev-config:
-    uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@v4.0.0
+    uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@<タグのコミットの SHA> # <タグ>
 ```
 
 ```yaml
@@ -232,7 +270,7 @@ on:
 
 jobs:
   claude:
-    uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@v4.0.0
+    uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@<タグのコミットの SHA> # <タグ>
     secrets: inherit
     permissions:
       contents: write
@@ -252,7 +290,7 @@ on:
 
 jobs:
   review:
-    uses: takudev-works/dev-config/.github/workflows/reusable-dev-config-review.yml@v4.0.0
+    uses: takudev-works/dev-config/.github/workflows/reusable-dev-config-review.yml@<タグのコミットの SHA> # <タグ>
     secrets: inherit
     permissions:
       contents: write
@@ -260,6 +298,7 @@ jobs:
       id-token: write
 ```
 
+- 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
@@ -279,7 +318,7 @@ jobs:
 
 ## 変更の流れ
 
-変更は PR で出す。版を上げるときは、PR で package.json の `version` を上げ、merge したそのコミットに同じ版のタグ（`v4.1.0` など）を打つ。タグを push すると `.github/workflows/release-tag.yml` が、タグと package.json の版が一致するかを確かめる。各 repo は Renovate などでタグを更新する。
+変更は PR で出す。版を上げるときは、PR で package.json の `version` を上げ、merge したそのコミットに同じ版のタグ（`v` に版を付けたもの）を打つ。タグを push すると `.github/workflows/release-tag.yml` が、タグと package.json の版が一致するかを確かめる。各 repo は Renovate などでタグを更新する。
 
 v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打った。各 repo がタグのコミットの SHA を参照しているので、打ち直していない。
 
