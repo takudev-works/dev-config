@@ -238,7 +238,6 @@ Conventional Commits の形（`feat: …` など）を検査する。`subject-ca
 | ワークフロー | 中身 |
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す |
-| `.github/workflows/reusable-dev-config-review.yml` | 週 1 回など定期的に、repo の設定のうち dev-config の正本に重なっているものを Claude Code が探し、消す PR を出す |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
@@ -280,31 +279,24 @@ jobs:
       id-token: write
 ```
 
-```yaml
-# .github/workflows/dev-config-review.yml
-name: dev-config review
-
-on:
-  schedule:
-    # 毎週月曜 9:30（日本時間）
-    - cron: '30 0 * * 1'
-  workflow_dispatch:
-
-jobs:
-  review:
-    uses: takudev-works/dev-config/.github/workflows/reusable-dev-config-review.yml@<タグのコミットの SHA> # <タグ>
-    secrets: inherit
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
-```
-
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
 - Claude Code を動かすワークフローには `id-token: write` が要る。`claude-code-action` が、Claude の GitHub App のトークンを OIDC で取るため。無いと「Could not fetch an OIDC token」で失敗する
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
+
+## 正本と各 repo の重なりを片付ける
+
+`.github/workflows/dev-config-consolidate.yml` が毎週月曜 9:30（日本時間）に、takudev-works の repo を見て次の 2 つを行う。各 repo にワークフローを置かなくてよいように、dev-config の 1 か所で回す。
+
+| job | 中身 |
+| --- | --- |
+| `consolidate` | 2 つ以上の repo に同じ設定があれば、正本に足す PR を dev-config に出す |
+| `remove-duplicates` | dev-config を入れている repo ごとに、その repo が使っている版の正本と重なる設定を消す PR を、その repo に出す |
+
+`remove-duplicates` が dev-config の main ではなく各 repo が使っている版と比べるのは、正本にまだ入っていないものを消すと、その repo の検査が落ちるため。そのため、正本に寄せた設定が各 repo から消えるのは、寄せる PR を merge してタグを打ち、各 repo がその版を入れた後の実行になる。
+
+ほかの private な repo を読み、PR を出すために、組織の GitHub App `takudev-dev-config` を使う。権限は Contents と Pull requests の Read and write。Client ID と秘密鍵は、組織の secret `ORG_DEV_CONFIG_APP_CLIENT_ID` と `ORG_DEV_CONFIG_APP_PRIVATE_KEY`（dev-config だけが読める）に入れてある。
 
 ## ルールの選び方（markdownlint）
 
