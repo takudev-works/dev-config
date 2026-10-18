@@ -5,7 +5,6 @@
   "labels": ["dependencies"],
   "schedule": ["before 9am every weekday"],
   "timezone": "Asia/Tokyo",
-  "reviewers": ["t-i-0414"],
   "assignees": ["t-i-0414"],
   "commitMessagePrefix": "chore:",
   "minimumReleaseAge": "7 days",
