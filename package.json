@@ -1,6 +1,6 @@
 {
   "name": "dev-config",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "private": true,
   "description": "Takudev の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
