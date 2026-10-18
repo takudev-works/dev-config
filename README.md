@@ -250,7 +250,7 @@ mise run setup    # 依存と git hook を入れる
 bun run validate  # CI と同じ検査
 ```
 
-`mise` は dotfiles で入れる。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
 ````
 
 ## GitHub Actions の部品
@@ -350,4 +350,4 @@ mise run setup    # 依存と git hook を入れる
 bun run validate  # CI と同じ検査
 ```
 
-`mise` は dotfiles で入れる。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
