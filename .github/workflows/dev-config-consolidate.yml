@@ -2,8 +2,8 @@ name: dev-config consolidate
 
 on:
   schedule:
-    # 毎週月曜 10:00（日本時間）。各 repo の dev-config review（9:30）の後
-    - cron: '0 1 * * 1'
+    # 毎週月曜 9:30（日本時間）
+    - cron: '30 0 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -22,8 +22,7 @@ jobs:
         with:
           experimental: true
       - run: bun install --frozen-lockfile
-      # GITHUB_TOKEN はこの repo しか読めないので、ほかの private repo を読むために組織の GitHub App のトークンを使う。
-      # PR は Claude の GitHub App で出す（GITHUB_TOKEN で作った PR では CI が動かない）ので、このトークンは clone にだけ使う
+      # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を clone できないため
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
         with:
@@ -57,14 +56,14 @@ jobs:
             3. REPOS_DIR の下に、takudev-works の各 repo が clone してある。各 repo の設定のうち、2 つ以上の repo で同じ内容を書いているものを探す。例:
                - `cspell.json` の `words` や `ignorePaths`
                - `eslint.config.*` の除外や設定
-               - `.secretlintignore` の行、`.textlintignore` の行
+               - `.secretlintignore` の行、`.textlintignore` の行のうち、正本に無いもの
                - `renovate.json` の設定や `packageRules`
                - `tsconfig*.json` の `compilerOptions`
                - `lefthook.yml` や package.json の scripts のうち、README の例に無いもの
             4. どの repo にも当てはまる理由があるものだけを `src/` の正本に足す。特定の repo の事情（その repo のディレクトリ名、使っているフレームワークだけの設定など）は寄せない。判断に迷うものは足さず、PR の本文に「確かめてほしいこと」として書く
             5. 正本に足したものに README の説明が要れば、README も直す
             6. `bun run validate` が通ることを確かめる
-            7. 足したものがあれば、`chore/dev-config-consolidate-<日付>` のブランチを作ってコミットし、main に向けて PR を 1 本出す。題名は「feat: 各 repo に重なる設定を dev-config に寄せる」。本文には、足したものごとに、どの repo のどのファイルに書かれていたかを書く。各 repo の重複は、新しい版が入ったあとに各 repo の dev-config review が消す
+            7. 足したものがあれば、`chore/dev-config-consolidate-<日付>` のブランチを作ってコミットし、main に向けて PR を 1 本出す。題名は「feat: 各 repo に重なる設定を dev-config に寄せる」。本文には、足したものごとに、どの repo のどのファイルに書かれていたかを書く。各 repo の重複は、新しい版が各 repo に入ったあとに、このワークフローの remove-duplicates が消す
             8. 足すものがなければ、PR を作らずに終わる
 
             守ること:
@@ -74,4 +73,98 @@ jobs:
             - package.json の版は上げない。版は人が上げる
           claude_args: |
             --add-dir ${{ runner.temp }}/repos
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run validate*),Bash(bun install*)"
+
+  list-repos:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      repos: ${{ steps.list.outputs.repos }}
+    steps:
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-contents: read
+      - id: list
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          repos=$(
+            gh repo list "$OWNER" --no-archived --limit 200 --json name,defaultBranchRef \
+              --jq '.[] | select(.name != "dev-config") | "\(.name) \(.defaultBranchRef.name)"' |
+              while read -r name branch; do
+                if gh api "repos/$OWNER/$name/contents/package.json?ref=$branch" --jq .content 2>/dev/null |
+                  base64 -d | jq -e '.devDependencies["dev-config"]' >/dev/null 2>&1; then
+                  jq -nc --arg name "$name" --arg branch "$branch" '{name: $name, branch: $branch}'
+                fi
+              done | jq -sc .
+          )
+          echo "repos=$repos" >> "$GITHUB_OUTPUT"
+          echo "$repos"
+
+  remove-duplicates:
+    needs: list-repos
+    if: needs.list-repos.outputs.repos != '[]'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 30
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJSON(needs.list-repos.outputs.repos) }}
+    steps:
+      # GITHUB_TOKEN を使わないのは、ほかの repo に push も PR もできず、GITHUB_TOKEN で作った PR では CI も動かないため
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ matrix.repo.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ github.repository_owner }}/${{ matrix.repo.name }}
+          ref: ${{ matrix.repo.branch }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
+        with:
+          experimental: true
+      - run: bun install --frozen-lockfile
+      - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          prompt: |
+            REPO: ${{ github.repository_owner }}/${{ matrix.repo.name }}
+            BASE_BRANCH: ${{ matrix.repo.branch }}
+
+            この repo の設定のうち、takudev-works/dev-config の正本と重なっているものを消す PR を出してください。
+
+            1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config と重なる設定を消す in:title" --state open` で確かめる。開いていれば何もせずに終わる
+            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/dev-config` にある（README.md に各ファイルの役割がある）。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）
+            3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
+               - `cspell.json` の `words` や `ignorePaths` のうち、`node_modules/dev-config/src/cspell.json` にあるもの
+               - `eslint.config.*` の除外のうち、`node_modules/dev-config/src/eslint.config.mjs` にあるもの
+               - `renovate.json` の設定や `packageRules` のうち、`node_modules/dev-config/src/renovate.json` にあるもの
+               - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
+            4. `.secretlintignore` と `.textlintignore` は、行ごとには消さない。CLI に 1 つしか渡せないので、repo の除外ファイルには正本と同じ行が要る。repo の除外ファイルの中身が正本（`node_modules/dev-config/src/secretlintignore`、`node_modules/dev-config/src/textlintignore`）とまったく同じときだけ、ファイルを消し、package.json の scripts と `lefthook.yml` で正本を渡すように直す
+            5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
+            6. `bun run validate` が通ることを確かめる
+            7. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、BASE_BRANCH に向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く
+            8. 消すものがなければ、PR を作らずに終わる
+
+            守ること:
+            - repo の CLAUDE.md があれば従う
+            - コミットメッセージと PR の題名は Conventional Commits の形で、日本語で書く
+            - BASE_BRANCH に直接 push しない
+            - 設定を消す以外の変更（新しい設定を足す、版を上げるなど）はしない
+          claude_args: |
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run validate*),Bash(bun install*)"
