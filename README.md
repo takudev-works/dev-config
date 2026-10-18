@@ -322,4 +322,14 @@ jobs:
 
 v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打った。各 repo がタグのコミットの SHA を参照しているので、打ち直していない。
 
-この repo 自身も同じ設定で検査する。`mise run setup` で依存と lefthook を入れる。
+## この repo の開発の準備
+
+この repo 自身も、`src/` の正本で検査する。手元では次の順に実行する。
+
+```sh
+mise install      # mise.toml の版の bun と lefthook を入れる
+mise run setup    # 依存と git hook を入れる
+bun run validate  # CI と同じ検査
+```
+
+`mise` は dotfiles で入れる。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
