@@ -50,6 +50,7 @@
     "frontmatter",
     "iwashiro",
     "lefthook",
+    "libpq",
     "markdownlint",
     "monorepo",
     "mypy",
