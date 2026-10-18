@@ -212,7 +212,7 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | 設定 | 中身 |
 | --- | --- |
 | 実行の時間 | 平日の 9 時より前（日本時間）。lock ファイルの更新は月曜の 9 時より前 |
-| PR | ラベル `dependencies`、レビュアーと担当は `t-i-0414`、コミットメッセージの頭に `chore:`、同時に開く PR は 5 本まで |
+| PR | ラベル `dependencies`、担当は `t-i-0414`（レビュアーは各 repo の CODEOWNERS で付く）、コミットメッセージの頭に `chore:`、同時に開く PR は 5 本まで |
 | 上げ方 | 公開から 7 日たった版だけを上げる。範囲指定（`^` など）の下限も上げる |
 | まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる |
 | major | Dependency Dashboard で承認してから PR を出す |
@@ -230,6 +230,10 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 ### commitlint
 
 Conventional Commits の形（`feat: …` など）を検査する。`subject-case`（subject の大文字・小文字の書き方）は検査しない。subject は日本語で書くので、この規則は `README を直す` や `TypeScript を上げる` のように固有名詞で始まる subject を落とすだけになるため。
+
+### CODEOWNERS
+
+repo の `.github/CODEOWNERS` に `* @t-i-0414` を書く。Renovate や Claude が出す PR にも、自動でレビュアーが付く。CODEOWNERS はほかのファイルを読み込めず、組織全体に置く仕組みも無いので、この repo からは配れない。各 repo に置く。
 
 ## GitHub Actions の部品
 
