@@ -235,6 +235,24 @@ Conventional Commits の形（`feat: …` など）を検査する。`subject-ca
 
 repo の `.github/CODEOWNERS` に `* @t-i-0414` を書く。Renovate や Claude が出す PR にも、自動でレビュアーが付く。CODEOWNERS はほかのファイルを読み込めず、組織全体に置く仕組みも無いので、この repo からは配れない。各 repo に置く。
 
+### README
+
+repo の README に「開発の準備」の節を置き、手元で最初に実行することを書く。repo だけの準備（認証、DB、`.env` など）があれば、この後ろに足す。
+
+````markdown
+## 開発の準備
+
+手元では次の順に実行する。
+
+```sh
+mise install      # mise.toml の版のツールを入れる
+mise run setup    # 依存と git hook を入れる
+bun run validate  # CI と同じ検査
+```
+
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
+````
+
 ## GitHub Actions の部品
 
 再利用できるワークフロー（`workflow_call`）を置いている。各 repo は、いつ動かすかと呼び出し先だけを書く。runner や action の版、条件はここで一元管理する。
@@ -332,4 +350,4 @@ mise run setup    # 依存と git hook を入れる
 bun run validate  # CI と同じ検査
 ```
 
-`mise` は dotfiles で入れる。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
