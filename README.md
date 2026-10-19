@@ -299,12 +299,14 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
+      actions: read
 ```
 
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
 - Claude Code を動かすワークフローには `id-token: write` が要る。`claude-code-action` が、Claude の GitHub App のトークンを OIDC で取るため。無いと「Could not fetch an OIDC token」で失敗する
+- `claude.yml` には `actions: read` も要る。Claude が PR の CI の結果とログを読むため。無いと、CI が落ちた理由を聞いてもログを読めず、差分から推測するしかない。呼ばれる側が求める権限を呼ぶ側が持っていないと、ワークフローが起動時に失敗するので、呼ぶ側を先に足してから、呼ばれる側の版を上げる
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 - 組織の ruleset `dev-config` は、全 repo の既定のブランチと `main`・`staging`・`develop` にかかる。この check のほかに、承認 1 件、CODEOWNERS のレビュー、push で古い承認を取り消す、会話の解決、merge 方法は merge と squash、force push と削除の禁止を求める。組織の Owner は常に迂回できるので、自分の PR は迂回して merge する。repo だけの必須の check は、その repo の ruleset に書く
 
