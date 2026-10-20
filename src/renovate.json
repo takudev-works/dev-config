@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Takudev の repo に共通の Renovate の設定",
+  "description": "takudev-works の repo に共通の Renovate の設定",
   "extends": ["config:recommended"],
   "labels": ["dependencies"],
   "schedule": ["before 9am every weekday"],
