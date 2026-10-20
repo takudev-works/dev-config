@@ -338,12 +338,16 @@ jobs:
 
 ## 名前の付け方
 
-屋号まわりの名前は、外から見えるかどうかで使い分ける。
+屋号は `Taku.dev`。屋号まわりの名前は、外から見えるかどうかと、記号を使えるかどうかで使い分ける。
 
 | 区分 | 使う名前 | 対象の例 |
 | --- | --- | --- |
-| 対外的に見える名前 | `takudev` | メールドメイン（takudev.net）、Google Workspace、名刺、請求書、サイト |
+| 対外的に見える表示名 | `Taku.dev` | 名刺、請求書、サイト、アプリストアのデベロッパー名 |
+| 対外的に見える識別子 | `takudev` | メールドメイン（takudev.net）、Google Workspace のドメイン |
 | 開発基盤の中の名前 | `takudev-works` | GitHub の org、AWS のアカウント名、Vercel のチームなど |
+
+- 表示名は屋号の表記どおり `Taku.dev` と書く。`takudev` や `Takudev` と書かない
+- ドメインや ID のように `.` を使えない、または使うと別の意味になるところは `takudev` にする
 
 - ドメインは takudev.net のまま使う。takudev-works.net には移さない
 - AWS のルートのメールアドレスは takudev.net のものにする。アカウント名は表示名なので `takudev-works` でよい
