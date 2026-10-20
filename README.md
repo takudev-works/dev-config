@@ -342,12 +342,13 @@ jobs:
 
 | 区分 | 使う名前 | 対象の例 |
 | --- | --- | --- |
-| Taku.dev として名乗る名前 | `Taku.dev` | 名刺、請求書、サイト、アプリストアのデベロッパー名 |
+| Taku.dev として名乗る名前 | `Taku.dev` | 名刺、請求書、サイト、アプリストアのデベロッパー名、claude.ai の組織名 |
 | 制作に使うツールの中の名前 | `takudev-works` | GitHub の org、AWS のアカウント名、Vercel のチーム、Canva のチーム、Figma のチームなど |
 | 記号を使えない識別子 | `takudev` | メールドメイン（takudev.net）、Google Workspace のドメイン |
 
 - 名乗る名前は屋号の表記どおり `Taku.dev` と書く。`takudev` や `Takudev` と書かない
 - 制作に使うツールのチーム名は、お客さんを招待したりファイルを共有したりして相手に見えても、`takudev-works` にする
+- 制作に限らず事業全体で使うツールの組織名（claude.ai など）は、名乗る名前として `Taku.dev` にする
 - ドメインや ID のように `.` を使えない、または使うと別の意味になるところは `takudev` にする
 - ドメインは takudev.net のまま使う。takudev-works.net には移さない
 - AWS のルートのメールアドレスは takudev.net のものにする。アカウント名は表示名なので `takudev-works` でよい
