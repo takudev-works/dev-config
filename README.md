@@ -105,7 +105,7 @@ pre-commit:
       run: bun dev-config textlint {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,mts,cts,tsx}'
-      run: bun eslint {staged_files}
+      run: bun eslint --no-warn-ignored {staged_files}
     prettier:
       run: bun prettier --check --ignore-unknown {staged_files}
     cspell:
