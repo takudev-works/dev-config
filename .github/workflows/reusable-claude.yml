@@ -2,6 +2,9 @@ name: Claude (reusable)
 
 on:
   workflow_call:
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
 
 jobs:
   claude:
@@ -41,8 +44,9 @@ jobs:
       actions: read
 
     steps:
+      # persist-credentials: false にしないのは、Claude が branch を push するため
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
+        with: # zizmor: ignore[artipacked]
           fetch-depth: 1
 
       - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1

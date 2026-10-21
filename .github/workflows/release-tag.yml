@@ -16,13 +16,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - name: package.json の版のタグが無ければ打つ
+          persist-credentials: false
+      - name: package.json の版のタグとリリースが無ければ作る
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           tag="v$(jq -r .version package.json)"
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "$tag はもうある"
             exit 0
           fi
-          git tag "$tag" "$GITHUB_SHA"
-          git push origin "$tag"
-          echo "$tag を $GITHUB_SHA に打った"
+          previous=$(git describe --tags --abbrev=0 "$GITHUB_SHA")
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" \
+            --generate-notes --notes-start-tag "$previous"
+          echo "$tag を $GITHUB_SHA に打ち、$previous からの変更をリリースに書いた"

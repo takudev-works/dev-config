@@ -1,6 +1,6 @@
 {
   "name": "dev-config",
-  "version": "5.7.0",
+  "version": "5.8.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
@@ -17,7 +17,8 @@
     "validate:spell": "cspell --no-progress \"**\"",
     "validate:test": "vitest run",
     "validate:text": "textlint --config src/textlintrc.json --ignore-path src/textlintignore \"**/*.md\"",
-    "validate:type": "tsc && tsc -p tsconfig.vitest-config.json"
+    "validate:type": "tsc && tsc -p tsconfig.vitest-config.json",
+    "validate:workflows": "actionlint && zizmor --offline --min-severity low .github/workflows"
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",

@@ -19,10 +19,16 @@ jobs:
   validate:
     runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 20
+    permissions:
+      contents: read
     env:
       # renovate: datasource=npm depName=renovate
       RENOVATE_VERSION: 44.155.8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
+        with:
+          install_args: bun
       - run: bunx --package "renovate@$RENOVATE_VERSION" renovate-config-validator src/renovate.json renovate.json
