@@ -9,17 +9,22 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
         with:
           experimental: true
       - run: bun install --frozen-lockfile
       # 別の job にしないのは、check が増えると組織の ruleset に足す必要があり、新しい版に上がる前の repo の PR が止まるため
-      - name: PR のタイトルを commitlint で検査する
+      - name: PR のタイトルとコミットメッセージを commitlint で検査する
         if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           config=node_modules/dev-config/src/commitlintrc.json
           [ -f "$config" ] || config=src/commitlintrc.json
           printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
+          bun commitlint --config "$config" --from "$BASE_SHA" --to "$HEAD_SHA"
       - run: bun run validate

@@ -229,7 +229,7 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 
 ### commitlint
 
-Conventional Commits の形（`feat: …` など）を検査する。手元では lefthook の `commit-msg` でコミットメッセージを、CI では `reusable-validate.yml` で PR のタイトルを検査する。`subject-case`（subject の大文字・小文字の書き方）は検査しない。subject は日本語で書くので、この規則は `README を直す` や `TypeScript を上げる` のように固有名詞で始まる subject を落とすだけになるため。
+Conventional Commits の形（`feat: …` など）を検査する。手元では lefthook の `commit-msg` でコミットメッセージを、CI では `reusable-validate.yml` で PR のタイトルと PR のコミットメッセージを検査する。`subject-case`（subject の大文字・小文字の書き方）は検査しない。subject は日本語で書くので、この規則は `README を直す` や `TypeScript を上げる` のように固有名詞で始まる subject を落とすだけになるため。
 
 ### CODEOWNERS
 
@@ -259,7 +259,7 @@ bun run validate  # CI と同じ検査
 
 | ワークフロー | 中身 |
 | --- | --- |
-| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す。PR では、その前に PR のタイトルを commitlint で検査する |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す。PR では、その前に PR のタイトルと PR のコミットメッセージを commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
@@ -308,7 +308,7 @@ jobs:
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
 - Claude Code を動かすワークフローには `id-token: write` が要る。`claude-code-action` が、Claude の GitHub App のトークンを OIDC で取るため。無いと「Could not fetch an OIDC token」で失敗する
 - `claude.yml` には `actions: read` も要る。Claude が PR の CI の結果とログを読むため。無いと、CI が落ちた理由を聞いてもログを読めず、差分から推測するしかない。呼ばれる側が求める権限を呼ぶ側が持っていないと、ワークフローが起動時に失敗するので、呼ぶ側を先に足してから、呼ばれる側の版を上げる
-- PR のタイトルも検査する。squash で merge すると、PR のタイトルがコミットメッセージになるため。タイトルを直したときにも検査し直すように、`pull_request` の `types` に `edited` を入れる
+- PR のタイトルと、PR の base から head までのコミットメッセージも検査する。squash で merge すると PR のタイトルが、merge commit で merge すると PR のコミットメッセージが、そのまま既定のブランチに入るため。lefthook を通らないコミット（`--no-verify`、GitHub の画面での編集）も CI で止まる。merge commit（`Merge ...`）は commitlint が無視する。タイトルを直したときにも検査し直すように、`pull_request` の `types` に `edited` を入れる
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 - 組織の ruleset `dev-config` は、全 repo の既定のブランチと `main`・`staging`・`develop` にかかる。この check のほかに、承認 1 件、CODEOWNERS のレビュー、push で古い承認を取り消す、会話の解決、merge 方法は merge と squash、force push と削除の禁止を求める。組織の Owner は常に迂回できるので、自分の PR は迂回して merge する。repo だけの検査は、repo の ruleset で必須の check にせず、その repo の `validate:*` に足す。repo の ruleset を作ると、守るブランチと迂回できる人を組織の ruleset と 2 か所で持つことになるため
 
