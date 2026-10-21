@@ -24,6 +24,7 @@
     "**/.turbo/**",
     "**/.ruby-lsp/**",
     "**/.terraform/**",
+    "**/.vercel/**",
     "**/.git/**",
     "**/bun.lock",
     "**/uv.lock",
