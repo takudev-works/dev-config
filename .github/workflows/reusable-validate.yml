@@ -13,4 +13,13 @@ jobs:
         with:
           experimental: true
       - run: bun install --frozen-lockfile
+      # 別の job にしないのは、push のときに skip した job が合格として扱われ、PR のタイトルが落ちた結果を上書きしうるため
+      - name: PR のタイトルを commitlint で検査する
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          config=node_modules/dev-config/src/commitlintrc.json
+          [ -f "$config" ] || config=src/commitlintrc.json
+          printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
       - run: bun run validate
