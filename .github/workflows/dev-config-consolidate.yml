@@ -179,7 +179,9 @@ jobs:
                - `eslint.config.*` の除外のうち、`node_modules/dev-config/src/eslint.config.mjs` にあるもの
                - `renovate.json` の設定や `packageRules` のうち、`node_modules/dev-config/src/renovate.json` にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
-            4. `.secretlintignore` と `.textlintignore` は、行ごとには消さない。CLI に 1 つしか渡せないので、repo の除外ファイルには正本と同じ行が要る。repo の除外ファイルの中身が正本（`node_modules/dev-config/src/secretlintignore`、`node_modules/dev-config/src/textlintignore`）とまったく同じときだけ、ファイルを消し、package.json の scripts と `lefthook.yml` で正本を渡すように直す
+            4. `node_modules/dev-config/src/cli.mjs` があるか（この版に `dev-config` コマンドがあるか）で、次のどちらかにする
+               - ある: package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/dev-config/src/...` など）を、README の「dev-config コマンド」のとおり `dev-config <ツール>` に置き換える。`.secretlintignore` と `.textlintignore` からは、正本（`node_modules/dev-config/src/secretlintignore`、`node_modules/dev-config/src/textlintignore`）と同じ行を消す。行が残らなければファイルを消す
+               - ない: `.secretlintignore` と `.textlintignore` は行ごとには消さない。CLI に 1 つしか渡せないので、repo の除外ファイルには正本と同じ行が要る。中身が正本とまったく同じときだけ、ファイルを消し、package.json の scripts と `lefthook.yml` で正本を渡すように直す
             5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
             6. `bun run validate` が通ることを確かめる
             7. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、BASE_BRANCH に向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く
@@ -189,6 +191,6 @@ jobs:
             - repo の CLAUDE.md があれば従う
             - コミットメッセージと PR の題名は Conventional Commits の形で、日本語で書く
             - BASE_BRANCH に直接 push しない
-            - 設定を消す以外の変更（新しい設定を足す、版を上げるなど）はしない
+            - 設定を消すことと、手順 4 の `dev-config` コマンドへの置き換え以外の変更（新しい設定を足す、版を上げるなど）はしない
           claude_args: |
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run validate),Bash(bun install),Bash(bun install *)"

@@ -1,6 +1,6 @@
 # dev-config
 
-takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本。各 repo はこの repo を git の依存として入れ、各ツールに設定ファイルのパスを渡す。
+takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本。各 repo はこの repo を git の依存として入れ、`dev-config` コマンドか設定ファイルのパスで各ツールに正本を渡す。
 
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
@@ -18,6 +18,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `src/textlintignore` | textlint | どの repo でも検査しないもの |
 | `src/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
 | `src/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
+| `src/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
 
 正本は `src/` に置く。ルートには、この repo 自身を検査するための設定を置く。
 
@@ -44,7 +45,40 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
 
-lefthook には、各ツールに正本のパスを渡すコマンドを書く。
+### dev-config コマンド
+
+設定ファイルのパスを渡す必要があるツールは、`dev-config <ツール> [引数...]` で動かす。正本の設定のパスを足してツールを動かし、ツールの終了コードを返す。引数はそのままツールに渡る。
+
+| `dev-config` の後に書く名前 | 動かすツール | 足す引数 |
+| --- | --- | --- |
+| `commitlint` | commitlint | `--config src/commitlintrc.json` |
+| `markdownlint` | markdownlint-cli2 | `--config src/markdownlint-cli2.jsonc` |
+| `npm-package-json-lint` | npm-package-json-lint | `--configFile src/npmpackagejsonlintrc.json` |
+| `secretlint` | secretlint | `--secretlintrc src/secretlintrc.json --secretlintignore <除外>` |
+| `textlint` | textlint | `--config src/textlintrc.json --ignore-path <除外>` |
+
+textlint と secretlint の除外は、repo に `.textlintignore`・`.secretlintignore` があれば、正本の除外の後ろにその行を足したファイルを渡す。無ければ正本の除外をそのまま渡す。両ツールとも除外ファイルを 1 つしか渡せないので、repo には正本に足したい行だけを書く。
+
+パスを直接渡す書き方（`--config node_modules/dev-config/src/...`）も、これまでどおり動く。
+
+package.json の scripts には、次のように書く。
+
+```json
+{
+  "scripts": {
+    "validate": "run-p validate:*",
+    "validate:markdown": "dev-config markdownlint \"**/*.md\"",
+    "validate:package-json": "dev-config npm-package-json-lint \"**/package.json\"",
+    "validate:secrets": "dev-config secretlint \"**/*\"",
+    "validate:spell": "cspell --no-progress \"**\"",
+    "validate:text": "dev-config textlint \"**/*.md\""
+  }
+}
+```
+
+### lefthook
+
+lefthook には、`dev-config` コマンドで正本を渡すコマンドを書く。
 
 ```yaml
 glob_matcher: doublestar
@@ -52,17 +86,17 @@ glob_matcher: doublestar
 commit-msg:
   commands:
     commitlint:
-      run: bun commitlint --config node_modules/dev-config/src/commitlintrc.json --edit {1}
+      run: bun dev-config commitlint --edit {1}
 
 pre-commit:
   parallel: true
   commands:
     markdownlint:
       glob: '**/*.md'
-      run: bun markdownlint-cli2 --config node_modules/dev-config/src/markdownlint-cli2.jsonc {staged_files}
+      run: bun dev-config markdownlint {staged_files}
     textlint:
       glob: '**/*.md'
-      run: bun textlint --config node_modules/dev-config/src/textlintrc.json --ignore-path node_modules/dev-config/src/textlintignore {staged_files}
+      run: bun dev-config textlint {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,tsx}'
       run: bun eslint {staged_files}
@@ -71,7 +105,7 @@ pre-commit:
     cspell:
       run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
-      run: bun secretlint --secretlintrc node_modules/dev-config/src/secretlintrc.json --secretlintignore node_modules/dev-config/src/secretlintignore {staged_files}
+      run: bun dev-config secretlint {staged_files}
     package-json:
       glob: '**/package.json'
       run: bun run validate:package-json
@@ -97,21 +131,22 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 }
 ```
 
+ルールは `default: true` ですべて有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
+
+| ルール | 設定 | 理由 |
+| --- | --- | --- |
+| MD003 | `atx` | 見出しを `#` の形式にそろえる |
+| MD013 | 無効 | 日本語と表が混ざると、行の長さの制限に必ず引っかかる |
+| MD024 | 同じ階層だけ検査 | 別の節の下で同じ見出しを使うことはよくある |
+| MD034 | 無効 | URL をそのまま書くことを許す |
+| MD060 | 無効 | 日本語と数値が混ざる表では、詰めた書き方のほうが読みやすい |
+| MD028、MD031、MD033、MD036、MD040、MD041、MD056 | 無効 | 書き方の好みの範囲で、検査する利点が小さい |
+
 ### textlint
 
 日本語の文章を検査する。cspell は日本語を検査から外しているので、日本語はこちらで見る。
 
-```json
-{
-  "scripts": {
-    "validate:text": "textlint --config node_modules/dev-config/src/textlintrc.json --ignore-path node_modules/dev-config/src/textlintignore \"**/*.md\""
-  }
-}
-```
-
-textlint は `.gitignore` を見ないので、`.venv` や `.ruby-lsp` のように手元にだけある依存の md も検査してしまう。そのため、どの repo でも検査しないものを `src/textlintignore` で渡す。
-
-`--ignore-path` は 1 つしか渡せない（secretlint の `--secretlintignore` と同じ）。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+textlint は `.gitignore` を見ないので、`.venv` や `.ruby-lsp` のように手元にだけある依存の md も検査してしまう。そのため、どの repo でも検査しないものを `src/textlintignore` で渡す。repo だけの除外は `.textlintignore` に書く（「dev-config コマンド」を参照）。
 
 preset-ja-technical-writing のうち、次のルールを変えている。ほかは既定のまま使う。
 
@@ -145,7 +180,7 @@ lefthook では `--no-must-find-files` を付ける。コミットしたファ�
 
 ### secretlint
 
-`--secretlintignore` は 1 つしか渡せない。正本にない除外が要る repo は、正本の中身に足したファイルを repo に置いてそちらを渡す。
+repo だけの除外は `.secretlintignore` に書く。`dev-config secretlint` が正本の除外の後ろに足して渡す（「dev-config コマンド」を参照）。
 
 ### TypeScript
 
@@ -327,19 +362,6 @@ jobs:
 `remove-duplicates` が dev-config の main ではなく各 repo が使っている版と比べるのは、正本にまだ入っていないものを消すと、その repo の検査が落ちるため。そのため、正本に寄せた設定が各 repo から消えるのは、寄せる PR を merge してタグを打ち、各 repo がその版を入れた後の実行になる。
 
 ほかの private な repo を読み、PR を出すために、組織の GitHub App `takudev-dev-config` を使う。権限は Contents と Pull requests の Read and write。Client ID と秘密鍵は、組織の secret `ORG_DEV_CONFIG_APP_CLIENT_ID` と `ORG_DEV_CONFIG_APP_PRIVATE_KEY`（dev-config だけが読める）に入れてある。
-
-## ルールの選び方（markdownlint）
-
-`default: true` ですべてのルールを有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
-
-| ルール | 設定 | 理由 |
-| --- | --- | --- |
-| MD003 | `atx` | 見出しを `#` の形式にそろえる |
-| MD013 | 無効 | 日本語と表が混ざると、行の長さの制限に必ず引っかかる |
-| MD024 | 同じ階層だけ検査 | 別の節の下で同じ見出しを使うことはよくある |
-| MD034 | 無効 | URL をそのまま書くことを許す |
-| MD060 | 無効 | 日本語と数値が混ざる表では、詰めた書き方のほうが読みやすい |
-| MD028、MD031、MD033、MD036、MD040、MD041、MD056 | 無効 | 書き方の好みの範囲で、検査する利点が小さい |
 
 ## 名前の付け方
 
