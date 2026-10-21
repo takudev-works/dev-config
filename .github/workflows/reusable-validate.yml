@@ -10,7 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # 0 を数値で書かないのは、式の中では 0 が偽になり、常に 1 になるため
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
         with:
           experimental: true
