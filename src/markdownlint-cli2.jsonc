@@ -4,9 +4,6 @@
     "MD003": {
       "style": "atx"
     },
-    "MD007": {
-      "indent": 2
-    },
     "MD013": false,
     "MD024": {
       "siblings_only": true
@@ -31,6 +28,7 @@
     "**/out/**",
     "**/.output/**",
     "**/coverage/**",
+    "**/__pycache__/**",
     "**/.pytest_cache/**",
     "**/.mypy_cache/**",
     "**/.ruff_cache/**",
@@ -38,6 +36,8 @@
     "**/.next/**",
     "**/.turbo/**",
     "**/.ruby-lsp/**",
+    "**/.terraform/**",
+    "**/.vercel/**",
     "**/.git/**"
   ]
 }

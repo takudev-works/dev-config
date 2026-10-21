@@ -217,9 +217,9 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる |
 | major | Dependency Dashboard で承認してから PR を出す |
 | TypeScript | 7 未満に止める。typescript-eslint が TS 7 にまだ対応していないため |
-| `dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない |
+| `dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
 
-設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れない。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
+設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
 ### npm-package-json-lint
 

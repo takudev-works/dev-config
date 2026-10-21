@@ -62,8 +62,10 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "takudev-works の共通設定は自分たちで出すので、公開から日を置かずに上げ、major も Dashboard での承認を待たない。",
-      "matchDepNames": ["dev-config"],
+      "description": "takudev-works の共通設定は自分たちで出すので、公開から日を置かずに上げ、major も Dashboard での承認を待たない。package.json の版と、再利用できるワークフローの呼び出し先（depName は takudev-works/dev-config）を 1 本の PR で上げる。",
+      "matchDepNames": ["dev-config", "takudev-works/dev-config"],
+      "groupName": "dev-config",
+      "groupSlug": "dev-config",
       "minimumReleaseAge": null,
       "dependencyDashboardApproval": false
     }
