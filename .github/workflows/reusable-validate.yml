@@ -44,7 +44,12 @@ jobs:
           # renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.*)$
           SHELLCHECK_VERSION: 0.11.0
         run: |
-          git ls-files -z '*.sh' '*.bash' | xargs -0 -r mise exec "shellcheck@$SHELLCHECK_VERSION" -- shellcheck
+          shellcheck_tool="shellcheck@$SHELLCHECK_VERSION"
+          # env の版を使わないのは、repo の mise.toml に shellcheck があれば、手元の lefthook と同じ版で検査するため
+          if mise which shellcheck >/dev/null 2>&1; then
+            shellcheck_tool=shellcheck
+          fi
+          git ls-files -z '*.sh' '*.bash' | xargs -0 -r mise exec "$shellcheck_tool" -- shellcheck
           dir=node_modules/dev-config/dist
           [ -d "$dir" ] || dir=dist
           actionlint_config=.github/actionlint.yaml
@@ -52,6 +57,6 @@ jobs:
           zizmor_config=.github/zizmor.yml
           [ -f "$zizmor_config" ] || zizmor_config=$dir/zizmor.yml
           # runner の shellcheck を使わせないのは、版が runner の image で変わり、repo によって結果が変わるため
-          mise exec "shellcheck@$SHELLCHECK_VERSION" "actionlint@$ACTIONLINT_VERSION" -- actionlint -config-file "$actionlint_config"
+          mise exec "$shellcheck_tool" "actionlint@$ACTIONLINT_VERSION" -- actionlint -config-file "$actionlint_config"
           mise exec "zizmor@$ZIZMOR_VERSION" -- zizmor --offline --min-severity low --config "$zizmor_config" .github/workflows
       - run: bun run validate

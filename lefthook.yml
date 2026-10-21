@@ -26,6 +26,9 @@ pre-commit:
     package-json:
       glob: '**/package.json'
       run: bun run validate:package-json
+    shellcheck:
+      glob: '**/*.{sh,bash}'
+      run: shellcheck {staged_files}
     build:
       glob: 'src/**'
       run: bun run validate:build
