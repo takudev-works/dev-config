@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // tsconfig.json の include で済ませないのは、同じ名前の .d.mts があると .mjs が検査の対象から外れるため
+  "extends": "./tsconfig.json",
+  "include": ["src/vitest.config.mjs"]
+}

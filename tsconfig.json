@@ -5,5 +5,5 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": ["src/**/*.mjs", "src/**/*.d.mts", "*.mjs"]
+  "include": ["src/**/*.mjs", "src/**/*.d.mts", "test/**/*.mjs", "*.mjs"]
 }

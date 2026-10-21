@@ -1,6 +1,6 @@
 {
   "name": "dev-config",
-  "version": "5.6.2",
+  "version": "5.7.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
@@ -15,8 +15,9 @@
     "validate:package-json": "npmPkgJsonLint --configFile src/npmpackagejsonlintrc.json \"**/package.json\"",
     "validate:secrets": "secretlint --secretlintrc src/secretlintrc.json --secretlintignore src/secretlintignore \"**/*\"",
     "validate:spell": "cspell --no-progress \"**\"",
+    "validate:test": "vitest run",
     "validate:text": "textlint --config src/textlintrc.json --ignore-path src/textlintignore \"**/*.md\"",
-    "validate:type": "tsc"
+    "validate:type": "tsc && tsc -p tsconfig.vitest-config.json"
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",

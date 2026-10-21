@@ -181,7 +181,7 @@ import { coverage } from 'dev-config/src/vitest.config.mjs';
 
 export default defineConfig({
   test: {
-    coverage: { ...coverage, exclude: [...(coverage.exclude ?? []), 'src/routeTree.gen.ts'] }
+    coverage: { ...coverage, exclude: [...coverage.exclude, 'src/routeTree.gen.ts'] }
   }
 });
 ```
@@ -364,7 +364,9 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ## この repo の開発の準備
 
-この repo 自身も、`src/` の正本で検査する。手元では次の順に実行する。
+この repo 自身も、`src/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すことなど）。`src/vitest.config.mjs` は、同じ名前の `.d.mts` があると `tsc` の対象から外れるので、`tsconfig.vitest-config.json` で別に型を検査する。
+
+手元では次の順に実行する。
 
 ```sh
 mise install      # mise.toml の版の bun と lefthook を入れる
