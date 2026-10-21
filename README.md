@@ -2,27 +2,31 @@
 
 takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本。各 repo はこの repo を git の依存として入れ、`dev-config` コマンドか設定ファイルのパスで各ツールに正本を渡す。
 
+各 repo が読むのは `dist/` のファイル。
+
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
-| `src/markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
-| `src/cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
-| `src/commitlintrc.json` | commitlint | Conventional Commits |
-| `src/secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
-| `src/secretlintignore` | secretlint | どの repo でも検査しないもの |
-| `src/tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
-| `src/eslint.config.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
-| `src/vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
-| `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset |
-| `src/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
-| `src/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
-| `src/textlintignore` | textlint | どの repo でも検査しないもの |
-| `src/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
-| `src/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
-| `src/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
+| `dist/markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
+| `dist/cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
+| `dist/commitlintrc.json` | commitlint | Conventional Commits |
+| `dist/secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
+| `dist/secretlintignore` | secretlint | どの repo でも検査しないもの |
+| `dist/tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
+| `dist/eslint.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
+| `dist/vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
+| `dist/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
+| `dist/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
+| `dist/textlintignore` | textlint | どの repo でも検査しないもの |
+| `dist/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
+| `dist/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
+| `dist/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
+| `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate はこの repo の main の `src/renovate.json` を直接読む。`dist/renovate.json` は、各 repo が入れた版の中身と比べるための写し |
 
-正本は `src/` に置く。ルートには、この repo 自身を検査するための設定を置く。
+正本の元は `src/` に置き、`bun run build` で `dist/` を作る（「この repo の開発の準備」を参照）。ルートには、この repo 自身を検査するための設定を置く。
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
+
+v5 以前は、各 repo が `src/` のファイルを読んでいた。v6 で `dist/` に移したので、上げるときは各 repo の `dev-config/src/` と `node_modules/dev-config/src/` を、`dev-config/dist/` と `node_modules/dev-config/dist/` に直す。ESLint の正本は `eslint.config.mjs` から `eslint.mjs` に名前を変えた（「ESLint」を参照）。
 
 ## 使い方
 
@@ -39,7 +43,7 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
   "devDependencies": {
     "dev-config": "github:takudev-works/dev-config#<タグ>"
   },
-  "prettier": "dev-config/src/prettierrc.json"
+  "prettier": "dev-config/dist/prettierrc.json"
 }
 ```
 
@@ -51,17 +55,17 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 | `dev-config` の後に書く名前 | 動かすツール | 足す引数 |
 | --- | --- | --- |
-| `commitlint` | commitlint | `--config src/commitlintrc.json` |
-| `markdownlint` | markdownlint-cli2 | `--config src/markdownlint-cli2.jsonc` |
-| `npm-package-json-lint` | npm-package-json-lint | `--configFile src/npmpackagejsonlintrc.json` |
-| `secretlint` | secretlint | `--secretlintrc src/secretlintrc.json --secretlintignore <除外>` |
-| `textlint` | textlint | `--config src/textlintrc.json --ignore-path <除外>` |
+| `commitlint` | commitlint | `--config dist/commitlintrc.json` |
+| `markdownlint` | markdownlint-cli2 | `--config dist/markdownlint-cli2.jsonc` |
+| `npm-package-json-lint` | npm-package-json-lint | `--configFile dist/npmpackagejsonlintrc.json` |
+| `secretlint` | secretlint | `--secretlintrc dist/secretlintrc.json --secretlintignore <除外>` |
+| `textlint` | textlint | `--config dist/textlintrc.json --ignore-path <除外>` |
 
 textlint と secretlint の除外は、repo に `.textlintignore`・`.secretlintignore` があれば、正本の除外の後ろにその行を足したファイルを渡す。無ければ正本の除外をそのまま渡す。両ツールとも除外ファイルを 1 つしか渡せないので、repo には正本に足したい行だけを書く。
 
 `.textlintignore`・`.secretlintignore` は、コマンドを動かすディレクトリ（ふつうは repo のルート）に置く。`dev-config` コマンドはそのディレクトリのものだけを読むので、モノレポのパッケージに置いても、ルートで動かすときには効かない。
 
-パスを直接渡す書き方（`--config node_modules/dev-config/src/...`）も、これまでどおり動く。
+パスを直接渡す書き方（`--config node_modules/dev-config/dist/...`）も、これまでどおり動く。
 
 package.json の scripts には、次のように書く。
 
@@ -100,7 +104,7 @@ pre-commit:
       glob: '**/*.md'
       run: bun dev-config textlint {staged_files}
     eslint:
-      glob: '**/*.{js,mjs,cjs,ts,tsx}'
+      glob: '**/*.{js,mjs,cjs,ts,mts,cts,tsx}'
       run: bun eslint {staged_files}
     prettier:
       run: bun prettier --check --ignore-unknown {staged_files}
@@ -129,7 +133,7 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 
 ```json
 {
-  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/src/markdownlint-cli2.jsonc"
+  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/dist/markdownlint-cli2.jsonc"
 }
 ```
 
@@ -148,7 +152,7 @@ Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/se
 
 日本語の文章を検査する。cspell は日本語を検査から外しているので、日本語はこちらで見る。
 
-textlint は `.gitignore` を見ないので、`.venv` や `.ruby-lsp` のように手元にだけある依存の md も検査してしまう。そのため、どの repo でも検査しないものを `src/textlintignore` で渡す。repo だけの除外は `.textlintignore` に書く（「dev-config コマンド」を参照）。
+textlint は `.gitignore` を見ないので、`.venv` や `.ruby-lsp` のように手元にだけある依存の md も検査してしまう。そのため、どの repo でも検査しないものを `dist/textlintignore` で渡す。repo だけの除外は `.textlintignore` に書く（「dev-config コマンド」を参照）。
 
 preset-ja-technical-writing のうち、次のルールを変えている。ほかは既定のまま使う。
 
@@ -166,7 +170,7 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
 ```json
 {
   "version": "0.2",
-  "import": ["./node_modules/dev-config/src/cspell.json"],
+  "import": ["./node_modules/dev-config/dist/cspell.json"],
   "ignorePaths": ["python/reference/**"],
   "words": ["<その repo だけの単語>"]
 }
@@ -190,7 +194,7 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 
 ```json
 {
-  "extends": "dev-config/src/tsconfig.json",
+  "extends": "dev-config/dist/tsconfig.json",
   "compilerOptions": { "types": ["bun"] },
   "include": ["scripts/**/*.ts"]
 }
@@ -201,10 +205,12 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 repo の `eslint.config.mjs` で正本を読み、repo だけの除外や設定を後ろに足す。
 
 ```js
-import base from 'dev-config/src/eslint.config.mjs';
+import base from 'dev-config/dist/eslint.mjs';
 
 export default [...base, { ignores: ['python/**'] }];
 ```
+
+正本の名前を `eslint.config.mjs` にしないのは、typescript-eslint が `eslint.config.*` という名前のファイルの場所から `tsconfigRootDir` を推し量るため。正本がその名前だと、repo のルートではなく `node_modules/dev-config/dist` を推し量る。
 
 TypeScript と typescript-eslint の版は、この repo でそろえて上げる。Expo のように、フレームワークが TypeScript や ESLint の設定を決めている package は、そちらに従う。
 
@@ -214,7 +220,7 @@ TS のある repo にはテストを書き、coverage の閾値（4 つの指標
 
 ```ts
 import { defineConfig } from 'vitest/config';
-import { coverage } from 'dev-config/src/vitest.config.mjs';
+import { coverage } from 'dev-config/dist/vitest.config.mjs';
 
 export default defineConfig({
   test: {
@@ -223,11 +229,11 @@ export default defineConfig({
 });
 ```
 
-足すものがなければ、`export { default } from 'dev-config/src/vitest.config.mjs';` だけでよい。`src/vitest.config.d.mts` は、TS から読むときの型の定義。
+足すものがなければ、`export { default } from 'dev-config/dist/vitest.config.mjs';` だけでよい。TS から読むときの型の定義（`dist/vitest.config.d.mts`）は、ビルドで作られる。
 
 ### Prettier
 
-package.json の `"prettier"` に `dev-config/src/prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
+package.json の `"prettier"` に `dev-config/dist/prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
 
 Markdown は整形しない。Prettier は表の列を必ず揃えるが、日本語と数値が混ざる表は詰めた書き方のほうが読みやすい（markdownlint の MD060 を無効にしているのと同じ理由）。正本の `overrides` で `*.md` に `requirePragma` を付け、`@format` の印がある md だけを整形の対象にしている。md の検査は markdownlint に任せる。
 
@@ -391,7 +397,15 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ## この repo の開発の準備
 
-この repo 自身も、`src/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すことなど）。`src/vitest.config.mjs` は、同じ名前の `.d.mts` があると `tsc` の対象から外れるので、`tsconfig.vitest-config.json` で別に型を検査する。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
+この repo 自身も、`dist/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
+
+### ビルド
+
+`src/` の TS（`*.mts`）を `tsc` で `dist/` の JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）を `dist/` に写す。`src/` を変えたら `bun run build` を実行し、`dist/` も一緒にコミットする。
+
+- `dist/` をコミットするのは、各 repo が git の依存として入れるときに、bun が依存の `prepare` を動かさない（信頼していない依存のスクリプトとして止める）ため。入れるときにビルドできない
+- `validate:build` が一時ディレクトリにビルドし直し、`dist/` と違えば落ちる。lefthook も `src/` を変えたコミットで同じ検査をする
+- `dist/` は Prettier の対象から外している（`tsc` の出力の書式は Prettier と違う）。ESLint・cspell などは、正本の除外に `dist` があるので対象にならない
 
 手元では次の順に実行する。
 

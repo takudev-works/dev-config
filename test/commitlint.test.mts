@@ -4,8 +4,7 @@ import { expect, test } from 'vitest';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
-/** @param {string} message */
-const commitlint = (message) =>
+const commitlint = (message: string) =>
   spawnSync('node_modules/.bin/commitlint', ['--config', 'src/commitlintrc.json'], {
     cwd: root,
     input: message,

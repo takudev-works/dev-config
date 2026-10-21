@@ -9,30 +9,22 @@ import { describe, expect, test, vi } from 'vitest';
 import { resolveBin, runTool } from '../src/run-tool.mjs';
 
 const src = fileURLToPath(new URL('../src/', import.meta.url));
-const cli = join(src, 'cli.mjs');
+const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 
 const emptyDir = () => mkdtempSync(join(tmpdir(), 'dev-config-test-'));
 
-/**
- * @param {string[]} argv
- * @param {string} [cwd]
- */
-const spawned = (argv, cwd = emptyDir()) => {
+const spawned = (argv: string[], cwd = emptyDir()) => {
   let bin = '';
-  /** @type {string[]} */
-  let args = [];
-  /** @param {string} b @param {string[]} a */
-  const spawn = (b, a) => {
+  let args: string[] = [];
+  const spawn = (b: string, a: string[]) => {
     [bin, args] = [b, a];
     return { status: 0 };
   };
-  // @ts-expect-error 戻り値は status だけを返す
   const code = runTool(argv, { cwd, spawn });
   return { code, bin, args };
 };
 
-/** @param {string[]} args @param {string} flag */
-const valueOf = (args, flag) => args[args.indexOf(flag) + 1] ?? '';
+const valueOf = (args: string[], flag: string) => args[args.indexOf(flag) + 1] ?? '';
 
 describe('正本の設定を渡してツールを動かす', () => {
   test.each([
@@ -80,14 +72,12 @@ test('知らないツールの名前では、使い方を出して 2 で終わ�
 test('ツールを起動できなければ 1 で終わる', () => {
   const error = vi.spyOn(console, 'error').mockImplementation(() => {});
   const spawn = vi.fn(() => ({ error: new Error('spawn ENOENT'), status: null }));
-  // @ts-expect-error 戻り値は error と status だけを返す
   expect(runTool(['commitlint'], { cwd: emptyDir(), spawn })).toBe(1);
   error.mockRestore();
 });
 
-describe('dev-config コマンド', () => {
-  /** @param {string} message */
-  const commitlint = (message) =>
+describe('ビルドした dev-config コマンド', () => {
+  const commitlint = (message: string) =>
     spawnSync(process.execPath, [cli, 'commitlint'], { input: message, encoding: 'utf8' }).status;
 
   test('ツールの終了コードを返す', () => {

@@ -8,21 +8,20 @@ import { fileURLToPath } from 'node:url';
 
 const srcDir = dirname(fileURLToPath(import.meta.url));
 
-/** @param {string} name */
-const canonical = (name) => join(srcDir, name);
+const canonical = (name: string) => join(srcDir, name);
 
-/**
- * @typedef {object} Tool
- * @property {string} bin
- * @property {(cwd: string) => string[]} options
- */
+type Tool = {
+  bin: string;
+  options: (cwd: string) => string[];
+};
 
-/**
- * @param {string} name
- * @param {string} repoIgnore
- * @param {string} cwd
- */
-export const ignoreFile = (name, repoIgnore, cwd) => {
+type Spawn = (
+  command: string,
+  args: string[],
+  options: { cwd: string; stdio: 'inherit' }
+) => { status: number | null; error?: Error };
+
+export const ignoreFile = (name: string, repoIgnore: string, cwd: string) => {
   const repoPath = join(cwd, repoIgnore);
   if (!existsSync(repoPath)) return canonical(name);
   const merged = join(mkdtempSync(join(tmpdir(), 'dev-config-')), name);
@@ -33,8 +32,7 @@ export const ignoreFile = (name, repoIgnore, cwd) => {
   return merged;
 };
 
-/** @type {Record<string, Tool>} */
-export const tools = {
+export const tools: Record<string, Tool> = {
   commitlint: {
     bin: 'commitlint',
     options: () => ['--config', canonical('commitlintrc.json')]
@@ -67,18 +65,15 @@ export const tools = {
   }
 };
 
-/** @param {string} bin */
-export const resolveBin = (bin) =>
+export const resolveBin = (bin: string) =>
   [join(srcDir, '..', 'node_modules', '.bin', bin), join(srcDir, '..', '..', '.bin', bin)].find(
     (path) => existsSync(path)
   ) ?? bin;
 
-/**
- * @param {string[]} argv
- * @param {{ cwd?: string, spawn?: typeof spawnSync }} [options]
- * @returns {number}
- */
-export const runTool = ([name, ...args], { cwd = process.cwd(), spawn = spawnSync } = {}) => {
+export const runTool = (
+  [name, ...args]: string[],
+  { cwd = process.cwd(), spawn = spawnSync as Spawn }: { cwd?: string; spawn?: Spawn } = {}
+): number => {
   const tool = name === undefined ? undefined : tools[name];
   if (tool === undefined) {
     console.error(`使い方: dev-config <${Object.keys(tools).join('|')}> [引数...]`);

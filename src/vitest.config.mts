@@ -1,6 +1,7 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type ViteUserConfig } from 'vitest/config';
 
-/** @satisfies {typeof import('./vitest.config.d.mts').coverage} */
+type CoverageOptions = NonNullable<NonNullable<ViteUserConfig['test']>['coverage']>;
+
 export const coverage = {
   provider: 'v8',
   include: ['src/**/*.{ts,tsx}'],
@@ -12,7 +13,7 @@ export const coverage = {
     functions: 95,
     lines: 95
   }
-};
+} satisfies CoverageOptions & { include: string[]; exclude: string[] };
 
 export default defineConfig({
   test: { coverage }

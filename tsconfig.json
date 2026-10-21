@@ -3,7 +3,8 @@
   "extends": "./src/tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*.mjs", "src/**/*.d.mts", "test/**/*.mjs", "*.mjs"]
+  "include": ["src/**/*.mts", "test/**/*.mts", "scripts/**/*.mts", "*.mjs"]
 }
