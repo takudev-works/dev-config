@@ -15,11 +15,16 @@ export default defineConfig(
     '**/.output/**',
     '**/coverage/**',
     '**/__pycache__/**',
+    '**/.pytest_cache/**',
+    '**/.mypy_cache/**',
+    '**/.ruff_cache/**',
     '**/.expo/**',
     '**/.next/**',
     '**/.turbo/**',
+    '**/.ruby-lsp/**',
+    '**/.terraform/**',
     '**/.vercel/**',
-    '**/.terraform/**'
+    '**/.git/**'
   ]),
   js.configs.recommended,
   tseslint.configs.recommended,

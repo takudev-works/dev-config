@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
+/** @satisfies {typeof import('./vitest.config.d.mts').coverage} */
 export const coverage = {
   provider: 'v8',
   include: ['src/**/*.{ts,tsx}'],
