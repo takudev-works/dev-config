@@ -19,8 +19,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-        with:
-          experimental: true
       - run: bun install --frozen-lockfile
       # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を clone できないため
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -135,8 +133,6 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-        with:
-          experimental: true
       - run: bun install --frozen-lockfile
       - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
         with:
