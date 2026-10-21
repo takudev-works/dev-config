@@ -2,5 +2,5 @@
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
   "version": "0.2",
   "import": ["./src/cspell.json"],
-  "words": ["koalaman", "rhysd", "shellcheck", "zizmorcore"]
+  "words": ["koalaman", "rhysd", "zizmorcore"]
 }

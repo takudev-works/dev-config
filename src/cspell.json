@@ -66,6 +66,7 @@
     "secretlint",
     "secretlintignore",
     "secretlintrc",
+    "shellcheck",
     "Taku",
     "takudev",
     "Takuya",
