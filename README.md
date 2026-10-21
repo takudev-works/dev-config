@@ -275,6 +275,8 @@ on:
 jobs:
   dev-config:
     uses: takudev-works/dev-config/.github/workflows/reusable-validate.yml@<タグのコミットの SHA> # <タグ>
+    permissions:
+      contents: read
 ```
 
 ```yaml
@@ -294,7 +296,8 @@ on:
 jobs:
   claude:
     uses: takudev-works/dev-config/.github/workflows/reusable-claude.yml@<タグのコミットの SHA> # <タグ>
-    secrets: inherit
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:
       contents: write
       pull-requests: write
@@ -304,7 +307,7 @@ jobs:
 ```
 
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
-- `secrets: inherit` で、組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` を渡す
+- 組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` だけを名前で渡す。`secrets: inherit` にしないのは、呼ばれる側にほかの secret まで渡るため（`secrets: inherit` のままの repo も動く）
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
 - Claude Code を動かすワークフローには `id-token: write` が要る。`claude-code-action` が、Claude の GitHub App のトークンを OIDC で取るため。無いと「Could not fetch an OIDC token」で失敗する
 - `claude.yml` には `actions: read` も要る。Claude が PR の CI の結果とログを読むため。無いと、CI が落ちた理由を聞いてもログを読めず、差分から推測するしかない。呼ばれる側が求める権限を呼ぶ側が持っていないと、ワークフローが起動時に失敗するので、呼ぶ側を先に足してから、呼ばれる側の版を上げる
@@ -358,18 +361,18 @@ jobs:
 
 ## 変更の流れ
 
-変更は PR で出す。版を上げるときは、PR で package.json の `version` を上げる。merge すると `.github/workflows/release-tag.yml` が、そのコミットに同じ版のタグ（`v` に版を付けたもの）を打つ。その版のタグがもうあれば何もしない。タグは手で打たない。各 repo は Renovate などでタグを更新する。
+変更は PR で出す。版を上げるときは、PR で package.json の `version` を上げる。merge すると `.github/workflows/release-tag.yml` が、そのコミットに同じ版のタグ（`v` に版を付けたもの）を打ち、前のタグからの PR を並べた GitHub Release を作る。各 repo の Renovate の PR に、この変更点が載る。その版のタグがもうあれば何もしない。タグは手で打たない。各 repo は Renovate などでタグを更新する。
 
 v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打った。各 repo がタグのコミットの SHA を参照しているので、打ち直していない。
 
 ## この repo の開発の準備
 
-この repo 自身も、`src/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すことなど）。`src/vitest.config.mjs` は、同じ名前の `.d.mts` があると `tsc` の対象から外れるので、`tsconfig.vitest-config.json` で別に型を検査する。
+この repo 自身も、`src/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すことなど）。`src/vitest.config.mjs` は、同じ名前の `.d.mts` があると `tsc` の対象から外れるので、`tsconfig.vitest-config.json` で別に型を検査する。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
 
 手元では次の順に実行する。
 
 ```sh
-mise install      # mise.toml の版の bun と lefthook を入れる
+mise install      # mise.toml の版の bun、lefthook、actionlint、zizmor を入れる
 mise run setup    # 依存と git hook を入れる
 bun run validate  # CI と同じ検査
 ```

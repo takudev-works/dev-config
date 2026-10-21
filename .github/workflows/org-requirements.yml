@@ -9,3 +9,5 @@ on:
 jobs:
   dev-config:
     uses: ./.github/workflows/reusable-validate.yml
+    permissions:
+      contents: read

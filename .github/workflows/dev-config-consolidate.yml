@@ -6,8 +6,66 @@ on:
     - cron: '30 0 * * 1'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}
+
 jobs:
+  list-repos:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      all: ${{ steps.list.outputs.all }}
+      with-dev-config: ${{ steps.list.outputs.with-dev-config }}
+    steps:
+      # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を読めないため。
+      # repositories で絞らないのは、組織のすべての repo を読むのが目的のため
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }} # zizmor: ignore[github-app]
+          permission-contents: read
+      - id: list
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OWNER: ${{ github.repository_owner }}
+          LIMIT: 200
+        run: |
+          set -o pipefail
+          all=$(
+            gh repo list "$OWNER" --no-archived --limit "$LIMIT" --json name,defaultBranchRef \
+              --jq '[.[] | select(.name != "dev-config") | {name, branch: .defaultBranchRef.name}]'
+          )
+          if [ "$(jq length <<<"$all")" -ge $((LIMIT - 1)) ]; then
+            echo "::error::repo が $LIMIT 個に近く、取りこぼすおそれがある。LIMIT を上げる"
+            exit 1
+          fi
+
+          with_dev_config=$(
+            jq -c '.[]' <<<"$all" | while read -r repo; do
+              name=$(jq -r .name <<<"$repo")
+              branch=$(jq -r .branch <<<"$repo")
+              if ! content=$(gh api "repos/$OWNER/$name/contents/package.json?ref=$branch" --jq .content 2>&1); then
+                if grep -q 'HTTP 404' <<<"$content"; then
+                  continue
+                fi
+                echo "$name の package.json を読めない: $content" >&2
+                exit 1
+              fi
+              if base64 -d <<<"$content" | jq -e '.devDependencies["dev-config"]' >/dev/null 2>&1; then
+                echo "$repo"
+              fi
+            done | jq -sc .
+          )
+
+          echo "all=$all" >> "$GITHUB_OUTPUT"
+          echo "with-dev-config=$with_dev_config" >> "$GITHUB_OUTPUT"
+          echo "dev-config を入れている repo: $with_dev_config"
+
   consolidate:
+    needs: list-repos
     runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 30
     permissions:
@@ -15,30 +73,31 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
+      # persist-credentials: false にしないのは、Claude が branch を push するため
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
+        with: # zizmor: ignore[artipacked]
           fetch-depth: 0
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
       - run: bun install --frozen-lockfile
-      # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を clone できないため
+      # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を clone できないため。
+      # repositories で絞らないのは、組織のすべての repo を読むのが目的のため
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
         with:
           client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
           private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
+          owner: ${{ github.repository_owner }} # zizmor: ignore[github-app]
           permission-contents: read
       - name: takudev-works の repo を clone する
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           OWNER: ${{ github.repository_owner }}
+          REPOS: ${{ needs.list-repos.outputs.all }}
         run: |
           mkdir -p "$RUNNER_TEMP/repos"
-          gh repo list "$OWNER" --no-archived --limit 200 --json name --jq '.[].name' |
-            grep -vx dev-config |
-            while read -r name; do
-              gh repo clone "$OWNER/$name" "$RUNNER_TEMP/repos/$name" -- --depth 1 --quiet
-            done
+          jq -r '.[].name' <<<"$REPOS" | while read -r name; do
+            gh repo clone "$OWNER/$name" "$RUNNER_TEMP/repos/$name" -- --depth 1 --quiet
+          done
           ls "$RUNNER_TEMP/repos"
       - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
         with:
@@ -71,50 +130,18 @@ jobs:
             - package.json の版は上げない。版は人が上げる
           claude_args: |
             --add-dir ${{ runner.temp }}/repos
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run validate*),Bash(bun install*)"
-
-  list-repos:
-    runs-on: blacksmith-2vcpu-ubuntu-2404
-    timeout-minutes: 5
-    permissions: {}
-    outputs:
-      repos: ${{ steps.list.outputs.repos }}
-    steps:
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        id: app-token
-        with:
-          client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
-          private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          permission-contents: read
-      - id: list
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          OWNER: ${{ github.repository_owner }}
-        run: |
-          repos=$(
-            gh repo list "$OWNER" --no-archived --limit 200 --json name,defaultBranchRef \
-              --jq '.[] | select(.name != "dev-config") | "\(.name) \(.defaultBranchRef.name)"' |
-              while read -r name branch; do
-                if gh api "repos/$OWNER/$name/contents/package.json?ref=$branch" --jq .content 2>/dev/null |
-                  base64 -d | jq -e '.devDependencies["dev-config"]' >/dev/null 2>&1; then
-                  jq -nc --arg name "$name" --arg branch "$branch" '{name: $name, branch: $branch}'
-                fi
-              done | jq -sc .
-          )
-          echo "repos=$repos" >> "$GITHUB_OUTPUT"
-          echo "$repos"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run validate),Bash(bun install),Bash(bun install *)"
 
   remove-duplicates:
     needs: list-repos
-    if: needs.list-repos.outputs.repos != '[]'
+    if: needs.list-repos.outputs.with-dev-config != '[]'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 30
     permissions: {}
     strategy:
       fail-fast: false
       matrix:
-        repo: ${{ fromJSON(needs.list-repos.outputs.repos) }}
+        repo: ${{ fromJSON(needs.list-repos.outputs.with-dev-config) }}
     steps:
       # GITHUB_TOKEN を使わないのは、ほかの repo に push も PR もできず、GITHUB_TOKEN で作った PR では CI も動かないため
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -126,8 +153,9 @@ jobs:
           repositories: ${{ matrix.repo.name }}
           permission-contents: write
           permission-pull-requests: write
+      # persist-credentials: false にしないのは、Claude が branch を push するため
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
+        with: # zizmor: ignore[artipacked]
           repository: ${{ github.repository_owner }}/${{ matrix.repo.name }}
           ref: ${{ matrix.repo.branch }}
           token: ${{ steps.app-token.outputs.token }}
@@ -163,4 +191,4 @@ jobs:
             - BASE_BRANCH に直接 push しない
             - 設定を消す以外の変更（新しい設定を足す、版を上げるなど）はしない
           claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(gh api:*),Bash(base64:*),Bash(bun run validate*),Bash(bun install*)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run validate),Bash(bun install),Bash(bun install *)"
