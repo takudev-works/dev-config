@@ -34,4 +34,20 @@ jobs:
           [ -f "$config" ] || config=dist/commitlintrc.json
           printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
           bun commitlint --config "$config" --from "$BASE_SHA" --to "$HEAD_SHA"
+      # 各 repo の mise.toml に入れさせないのは、版を repo ごとに持たせず、ここでそろえて上げるため
+      - name: ワークフローを actionlint と zizmor で検査する
+        env:
+          # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.*)$
+          ACTIONLINT_VERSION: 1.7.12
+          # renovate: datasource=github-releases depName=zizmorcore/zizmor extractVersion=^v(?<version>.*)$
+          ZIZMOR_VERSION: 1.30.1
+        run: |
+          dir=node_modules/dev-config/dist
+          [ -d "$dir" ] || dir=dist
+          actionlint_config=.github/actionlint.yaml
+          [ -f "$actionlint_config" ] || actionlint_config=$dir/actionlint.yaml
+          zizmor_config=.github/zizmor.yml
+          [ -f "$zizmor_config" ] || zizmor_config=$dir/zizmor.yml
+          mise exec "actionlint@$ACTIONLINT_VERSION" -- actionlint -config-file "$actionlint_config"
+          mise exec "zizmor@$ZIZMOR_VERSION" -- zizmor --offline --min-severity low --config "$zizmor_config" .github/workflows
       - run: bun run validate

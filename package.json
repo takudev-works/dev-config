@@ -1,6 +1,6 @@
 {
   "name": "dev-config",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "validate:test": "vitest run",
     "validate:text": "bun dist/cli.mjs textlint \"**/*.md\"",
     "validate:type": "tsc",
-    "validate:workflows": "actionlint && zizmor --offline --min-severity low .github/workflows"
+    "validate:workflows": "actionlint -config-file dist/actionlint.yaml && zizmor --offline --min-severity low --config dist/zizmor.yml .github/workflows"
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",
