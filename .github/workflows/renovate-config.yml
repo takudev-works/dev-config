@@ -25,6 +25,4 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-        with:
-          experimental: true
       - run: bunx --package "renovate@$RENOVATE_VERSION" renovate-config-validator src/renovate.json renovate.json
