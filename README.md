@@ -59,6 +59,8 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 textlint と secretlint の除外は、repo に `.textlintignore`・`.secretlintignore` があれば、正本の除外の後ろにその行を足したファイルを渡す。無ければ正本の除外をそのまま渡す。両ツールとも除外ファイルを 1 つしか渡せないので、repo には正本に足したい行だけを書く。
 
+`.textlintignore`・`.secretlintignore` は、コマンドを動かすディレクトリ（ふつうは repo のルート）に置く。`dev-config` コマンドはそのディレクトリのものだけを読むので、モノレポのパッケージに置いても、ルートで動かすときには効かない。
+
 パスを直接渡す書き方（`--config node_modules/dev-config/src/...`）も、これまでどおり動く。
 
 package.json の scripts には、次のように書く。
