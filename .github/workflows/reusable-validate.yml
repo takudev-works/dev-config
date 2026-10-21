@@ -13,7 +13,7 @@ jobs:
         with:
           experimental: true
       - run: bun install --frozen-lockfile
-      # 別の job にしないのは、push のときに skip した job が合格として扱われ、PR のタイトルが落ちた結果を上書きしうるため
+      # 別の job にしないのは、check が増えると組織の ruleset に足す必要があり、新しい版に上がる前の repo の PR が止まるため
       - name: PR のタイトルを commitlint で検査する
         if: github.event_name == 'pull_request'
         env:
