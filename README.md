@@ -47,7 +47,7 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 }
 ```
 
-ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールのバージョンはこの repo で上げ、各 repo はタグを上げるだけにする。
+ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の `bun.lock` で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。
 
 ### dev-config コマンド
 
