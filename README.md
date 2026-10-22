@@ -28,6 +28,8 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 
 v5 以前は、各 repo が `src/` のファイルを読んでいた。v6 で `dist/` に移したので、上げるときは各 repo の `dev-config/src/` と `node_modules/dev-config/src/` を、`dev-config/dist/` と `node_modules/dev-config/dist/` に直す。ESLint の正本は `eslint.config.mjs` から `eslint.mjs` に名前を変えた（「ESLint」を参照）。
 
+v7 で `dist/markdownlint-cli2.jsonc` をやめた。v6.1 までの書き方（`--config` や `.vscode/settings.json` で正本の JSONC を渡す）の repo のために残していたが、どの repo も `.markdownlint-cli2.mjs` で読む形に移ったため。まだ JSONC を渡している repo は、「markdownlint」の書き方に直してから上げる。
+
 ## 使い方
 
 この repo を devDependencies に入れる。
@@ -163,7 +165,7 @@ markdownlint-cli2 も Cursor・VS Code の拡張（vscode-markdownlint）も、�
 - 拡張は、ワークスペースを信頼しているときだけ JS の設定を読む。`.markdownlint-cli2.mjs` を直したら、Cursor・VS Code を再起動する（拡張が JS を読み込んだまま持つため）
 - lefthook のように検査するファイルを直接渡しても、`ignores` の除外は効く
 - `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
-- `dist/markdownlint-cli2.jsonc` は、v6.1 までの書き方（`--config` や `.vscode/settings.json` で正本を渡す）の repo のために残している。中身は `dist/markdownlint-cli2.mjs` と同じで、ビルドで作る
+- dev-config を入れていないフォルダの md にも正本を当てたいときは、エディタのユーザー設定の `markdownlint.configFile` に `dist/markdownlint-cli2.mjs` を渡す。dotfiles が `~/.config/markdownlint/` にリンクしている。信頼していないワークスペースでは、拡張がこの JS を読まないので効かない
 
 ルールは `default: true` ですべて有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
 

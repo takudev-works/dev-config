@@ -6,14 +6,12 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
-  rmSync,
-  writeFileSync
+  rmSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import markdownlint from '../src/markdownlint/markdownlint-cli2.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const src = join(root, 'src');
@@ -53,11 +51,6 @@ export const build = (outDir: string, compile: (outDir: string) => number | null
     src
   );
   rmSync(compiled, { recursive: true, force: true });
-  // JSONC もやめないのは、v6.1 までの書き方（--config や .vscode/settings.json でこのファイルを渡す）の repo があるため
-  writeFileSync(
-    join(outDir, 'markdownlint-cli2.jsonc'),
-    `${JSON.stringify(markdownlint, null, 2)}\n`
-  );
   chmodSync(join(outDir, 'cli.mjs'), 0o755);
 };
 
