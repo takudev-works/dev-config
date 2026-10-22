@@ -51,7 +51,7 @@ export const tools: Record<string, Tool> = {
   },
   markdownlint: {
     bin: 'markdownlint-cli2',
-    options: () => ['--config', canonical('markdownlint-cli2.jsonc')]
+    options: () => ['--config', canonical('markdownlint-cli2.mjs')]
   },
   'npm-package-json-lint': {
     bin: 'npmPkgJsonLint',
