@@ -29,8 +29,6 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           config=node_modules/dev-config/dist/commitlintrc.json
-          # src を探すのをやめないのは、dist の無い v5 以前の dev-config を入れている repo が呼ぶため
-          [ -f "$config" ] || config=node_modules/dev-config/src/commitlintrc.json
           [ -f "$config" ] || config=dist/commitlintrc.json
           printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
           bun commitlint --config "$config" --from "$BASE_SHA" --to "$HEAD_SHA"
