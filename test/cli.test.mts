@@ -106,6 +106,30 @@ describe('canonical', () => {
   });
 });
 
+describe('resolveBin', () => {
+  const withBin = (binDir: string) => {
+    const root = emptyDir();
+    mkdirSync(join(root, binDir), { recursive: true });
+    writeFileSync(join(root, binDir, 'tool'), '');
+    return root;
+  };
+
+  test('この repo では、repo の node_modules/.bin から探す', () => {
+    const root = withBin('node_modules/.bin');
+    expect(resolveBin('tool', join(root, 'dist'))).toBe(join(root, 'node_modules/.bin/tool'));
+  });
+
+  test('各 repo では、node_modules/@takudev-works/dev-config/dist から見た node_modules/.bin から探す', () => {
+    const root = withBin('node_modules/.bin');
+    const dist = join(root, 'node_modules/@takudev-works/dev-config/dist');
+    expect(resolveBin('tool', dist)).toBe(join(root, 'node_modules/.bin/tool'));
+  });
+
+  test('どちらにも無ければ、名前だけを返す（PATH から探させる）', () => {
+    expect(resolveBin('tool', join(emptyDir(), 'dist'))).toBe('tool');
+  });
+});
+
 test('知らないツールの名前では、使い方を出して 2 で終わる', () => {
   const error = vi.spyOn(console, 'error').mockImplementation(() => {});
   expect(spawned(['eslint']).code).toBe(2);

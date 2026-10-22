@@ -28,7 +28,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          config=node_modules/dev-config/dist/commitlintrc.json
+          config=node_modules/@takudev-works/dev-config/dist/commitlintrc.json
           [ -f "$config" ] || config=dist/commitlintrc.json
           printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
           bun commitlint --config "$config" --from "$BASE_SHA" --to "$HEAD_SHA"
@@ -49,7 +49,7 @@ jobs:
           actionlint_tool=$(tool actionlint "$ACTIONLINT_VERSION")
           zizmor_tool=$(tool zizmor "$ZIZMOR_VERSION")
           git ls-files -z '*.sh' '*.bash' | xargs -0 -r mise exec "$shellcheck_tool" -- shellcheck
-          cli=node_modules/dev-config/dist/cli.mjs
+          cli=node_modules/@takudev-works/dev-config/dist/cli.mjs
           [ -f "$cli" ] || cli=dist/cli.mjs
           # runner の shellcheck を使わせないのは、版が runner の image で変わり、repo によって結果が変わるため
           mise exec "$shellcheck_tool" "$actionlint_tool" -- bun "$cli" actionlint
