@@ -99,8 +99,8 @@ export const tools: Record<string, Tool> = {
   }
 };
 
-export const resolveBin = (bin: string) =>
-  [join(srcDir, '..', 'node_modules', '.bin', bin), join(srcDir, '..', '..', '.bin', bin)].find(
+export const resolveBin = (bin: string, from = srcDir) =>
+  [join(from, '..', 'node_modules', '.bin', bin), join(from, '..', '..', '..', '.bin', bin)].find(
     (path) => existsSync(path)
   ) ?? bin;
 

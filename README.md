@@ -18,7 +18,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
 | `dist/textlintignore` | textlint | どの repo でも検査しないもの |
 | `dist/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
-| `dist/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`private: true`、依存の重複と並び順 |
+| `dist/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`name` の scope（`@takudev-works/`）、`private: true`、依存の重複と並び順 |
 | `dist/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
 | `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate はこの repo の main の `src/renovate.json` を直接読む。`dist/renovate.json` は、各 repo が入れた版の中身と比べるための写し |
 
@@ -29,6 +29,13 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 v5 以前は、各 repo が `src/` のファイルを読んでいた。v6 で `dist/` に移したので、上げるときは各 repo の `dev-config/src/` と `node_modules/dev-config/src/` を、`dev-config/dist/` と `node_modules/dev-config/dist/` に直す。ESLint の正本は `eslint.config.mjs` から `eslint.mjs` に名前を変えた（「ESLint」を参照）。
 
 v7 で `dist/markdownlint-cli2.jsonc` をやめた。v6.1 までの書き方（`--config` や `.vscode/settings.json` で正本の JSONC を渡す）の repo のために残していたが、どの repo も `.markdownlint-cli2.mjs` で読む形に移ったため。まだ JSONC を渡している repo は、「markdownlint」の書き方に直してから上げる。
+
+v8 で、package の名前を `dev-config` から `@takudev-works/dev-config` に変えた。takudev-works の repo の package の名前を、すべて `@takudev-works/` で始めることにしたため（「npm-package-json-lint」を参照）。Renovate は依存の名前を付け替えないので、上げるときは手で次を直す。
+
+- package.json の `devDependencies` の `"dev-config"` を `"@takudev-works/dev-config"` にする
+- 正本を読むパスの `dev-config/dist/` と `node_modules/dev-config/dist/` を、`@takudev-works/dev-config/dist/` と `node_modules/@takudev-works/dev-config/dist/` にする
+- その repo の package.json（モノレポなら中の package も）の `name` を `@takudev-works/` で始める
+- `reusable-validate.yml` の呼び出し先を v8 のタグの SHA にする
 
 ## 使い方
 
@@ -43,9 +50,9 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 ```json
 {
   "devDependencies": {
-    "dev-config": "github:takudev-works/dev-config#<タグ>"
+    "@takudev-works/dev-config": "github:takudev-works/dev-config#<タグ>"
   },
-  "prettier": "dev-config/dist/prettierrc.json"
+  "prettier": "@takudev-works/dev-config/dist/prettierrc.json"
 }
 ```
 
@@ -71,7 +78,7 @@ textlint と secretlint の除外は、repo に `.textlintignore`・`.secretlint
 
 `.textlintignore`・`.secretlintignore` は、コマンドを動かすディレクトリ（ふつうは repo のルート）に置く。`dev-config` コマンドはそのディレクトリのものだけを読むので、モノレポのパッケージに置いても、ルートで動かすときには効かない。
 
-パスを直接渡す書き方（`--config node_modules/dev-config/dist/...`）も、これまでどおり動く。
+パスを直接渡す書き方（`--config node_modules/@takudev-works/dev-config/dist/...`）も、これまでどおり動く。
 
 package.json の scripts には、次のように書く。
 
@@ -141,7 +148,7 @@ zizmor = "<版>"
 shellcheck = "<版>"
 ```
 
-ワークフローを CI で検査するだけでなく lefthook でも止めるのは、CI まで待たずに直せて、CI を回し直さずに済むため。エディタの拡張は、actionlint には信頼できるものが無く、zizmor の公式の拡張は repo の外（`node_modules/dev-config/dist`）の設定を見つけられないので使わない。
+ワークフローを CI で検査するだけでなく lefthook でも止めるのは、CI まで待たずに直せて、CI を回し直さずに済むため。エディタの拡張は、actionlint には信頼できるものが無く、zizmor の公式の拡張は repo の外（`node_modules/@takudev-works/dev-config/dist`）の設定を見つけられないので使わない。
 
 `glob_matcher: doublestar` は、`**/*.md` をルート直下の md にも一致させるため。lefthook の既定では `**` が 1 階層以上の意味になり、ルート直下のファイルが検査されない。
 
@@ -152,12 +159,12 @@ lefthook の設定そのものを共有しない（`extends` や `remotes` を�
 repo のルートに `.markdownlint-cli2.mjs` を置き、正本を読む。その repo だけで除外したいものは、`ignores` の後ろに足す。
 
 ```js
-import base from 'dev-config/dist/markdownlint-cli2.mjs';
+import base from '@takudev-works/dev-config/dist/markdownlint-cli2.mjs';
 
 export default { ...base, ignores: [...base.ignores, 'python/reference/**'] };
 ```
 
-足すものがなければ、`export { default } from 'dev-config/dist/markdownlint-cli2.mjs';` だけでよい。
+足すものがなければ、`export { default } from '@takudev-works/dev-config/dist/markdownlint-cli2.mjs';` だけでよい。
 
 markdownlint-cli2 も Cursor・VS Code の拡張（vscode-markdownlint）も、このファイルを repo のルートから自分で見つける。そのため、scripts と lefthook では `--config` を渡さずに動かす（`markdownlint-cli2 "**/*.md"`、`bun markdownlint-cli2 {staged_files}`）。`.vscode/settings.json` の `markdownlint.configFile` も要らない。
 
@@ -200,7 +207,7 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
 ```json
 {
   "version": "0.2",
-  "import": ["./node_modules/dev-config/dist/cspell.json"],
+  "import": ["./node_modules/@takudev-works/dev-config/dist/cspell.json"],
   "ignorePaths": ["python/reference/**"],
   "words": ["<その repo だけの単語>"]
 }
@@ -224,7 +231,7 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 
 ```json
 {
-  "extends": "dev-config/dist/tsconfig.json",
+  "extends": "@takudev-works/dev-config/dist/tsconfig.json",
   "compilerOptions": { "types": ["bun"] },
   "include": ["scripts/**/*.ts"]
 }
@@ -235,12 +242,12 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 repo の `eslint.config.mjs` で正本を読み、repo だけの除外や設定を後ろに足す。
 
 ```js
-import base from 'dev-config/dist/eslint.mjs';
+import base from '@takudev-works/dev-config/dist/eslint.mjs';
 
 export default [...base, { ignores: ['python/**'] }];
 ```
 
-正本の名前を `eslint.config.mjs` にしないのは、typescript-eslint が `eslint.config.*` という名前のファイルの場所から `tsconfigRootDir` を推し量るため。正本がその名前だと、repo のルートではなく `node_modules/dev-config/dist` を推し量る。
+正本の名前を `eslint.config.mjs` にしないのは、typescript-eslint が `eslint.config.*` という名前のファイルの場所から `tsconfigRootDir` を推し量るため。正本がその名前だと、repo のルートではなく `node_modules/@takudev-works/dev-config/dist` を推し量る。
 
 TypeScript と typescript-eslint の版は、この repo でそろえて上げる。Expo のように、フレームワークが TypeScript や ESLint の設定を決めている package は、そちらに従う。
 
@@ -250,7 +257,7 @@ TS のある repo にはテストを書き、coverage の閾値（4 つの指標
 
 ```ts
 import { defineConfig } from 'vitest/config';
-import { coverage } from 'dev-config/dist/vitest.config.mjs';
+import { coverage } from '@takudev-works/dev-config/dist/vitest.config.mjs';
 
 export default defineConfig({
   test: {
@@ -259,7 +266,7 @@ export default defineConfig({
 });
 ```
 
-足すものがなければ、`export { default } from 'dev-config/dist/vitest.config.mjs';` だけでよい。TS から読むときの型の定義（`dist/vitest.config.d.mts`）は、ビルドで作られる。
+足すものがなければ、`export { default } from '@takudev-works/dev-config/dist/vitest.config.mjs';` だけでよい。TS から読むときの型の定義（`dist/vitest.config.d.mts`）は、ビルドで作られる。
 
 正本は、`src/` のような置き場所に絞らず、すべての TS を数える。置き場所は repo ごとに違い、絞ると、絞った外にテストの無いコードを足しても数字に出ないため。数えないのは、テスト（`*.test.*`・`*.spec.*`）、型の定義、設定ファイル（`*.config.*`）、テスト用のディレクトリ（`test/`・`tests/`・`__tests__/`）、どの repo でも検査しないディレクトリ（ほかのツールの除外と同じ一覧）。
 
@@ -269,7 +276,7 @@ export default defineConfig({
 
 ### Prettier
 
-package.json の `"prettier"` に `dev-config/dist/prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
+package.json の `"prettier"` に `@takudev-works/dev-config/dist/prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
 
 Markdown は整形しない。Prettier は表の列を必ず揃えるが、日本語と数値が混ざる表は詰めた書き方のほうが読みやすい（markdownlint の MD060 を無効にしているのと同じ理由）。正本の `overrides` で `*.md` に `requirePragma` を付け、`@format` の印がある md だけを整形の対象にしている。md の検査は markdownlint に任せる。
 
@@ -302,7 +309,9 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 
 ### npm-package-json-lint
 
-どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。依存の書き方（`^` と固定のどちらにするか、git の依存にするか）は repo ごとに事情が違うので検査しない。
+どの repo にも当てはまるものだけを検査する: 各プロパティの型、`name` と `version` の書式、`name` が `@takudev-works/` で始まること、`private: true`（間違えて npm に公開しないため）、プロパティと依存の重複、依存のアルファベット順。
+
+`name` を `@takudev-works/` で始めるのは、takudev-works の package を、ほかの package と名前で取り違えないようにするため。モノレポの中の package も同じにする（`@takudev-works/<repo>-<名前>`）。依存の書き方（`^` と固定のどちらにするか、git の依存にするか）は repo ごとに事情が違うので検査しない。
 
 `"**/package.json"` で渡すと、`node_modules` の中は自動で除外される。ファイルのパスを直接渡すとディレクトリとして扱われて失敗するので、lefthook でも package.json が変わったときに `validate:package-json`（repo のすべての package.json）を動かす。
 

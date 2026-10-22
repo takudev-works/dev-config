@@ -54,7 +54,7 @@ jobs:
                 echo "$name の package.json を読めない: $content" >&2
                 exit 1
               fi
-              if base64 -d <<<"$content" | jq -e '.devDependencies["dev-config"]' >/dev/null 2>&1; then
+              if base64 -d <<<"$content" | jq -e '.devDependencies["@takudev-works/dev-config"]' >/dev/null 2>&1; then
                 echo "$repo"
               fi
             done | jq -sc .
@@ -173,15 +173,13 @@ jobs:
             この repo の設定のうち、takudev-works/dev-config の正本と重なっているものを消す PR を出してください。
 
             1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config と重なる設定を消す in:title" --state open` で確かめる。開いていれば何もせずに終わる
-            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/dev-config` にある（README.md に各ファイルの役割がある）。正本は `node_modules/dev-config/dist`（v6 以降）か `node_modules/dev-config/src`（v5 以前）にある。以下ではこれを「正本のディレクトリ」と書く。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）
+            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/@takudev-works/dev-config` にある（README.md に各ファイルの役割がある）。正本は `node_modules/@takudev-works/dev-config/dist` にある。以下ではこれを「正本のディレクトリ」と書く。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）
             3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
                - `cspell.json` の `words` や `ignorePaths` のうち、正本のディレクトリの `cspell.json` にあるもの
-               - `eslint.config.*` の除外のうち、正本のディレクトリの `eslint.mjs`（v5 以前は `eslint.config.mjs`）にあるもの
+               - `eslint.config.*` の除外のうち、正本のディレクトリの `eslint.mjs` にあるもの
                - `renovate.json` の設定や `packageRules` のうち、正本のディレクトリの `renovate.json` にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
-            4. 正本のディレクトリに `cli.mjs` があるか（この版に `dev-config` コマンドがあるか）で、次のどちらかにする
-               - ある: package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/dev-config/src/...` など）を、README の「dev-config コマンド」のとおり `dev-config <ツール>` に置き換える。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
-               - ない: `.secretlintignore` と `.textlintignore` は行ごとには消さない。CLI に 1 つしか渡せないので、repo の除外ファイルには正本と同じ行が要る。中身が正本とまったく同じときだけ、ファイルを消し、package.json の scripts と `lefthook.yml` で正本を渡すように直す
+            4. package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/@takudev-works/dev-config/dist/...` など）を、README の「dev-config コマンド」のとおり `dev-config <ツール>` に置き換える。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
             5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
             6. `bun run validate` が通ることを確かめる
             7. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、BASE_BRANCH に向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く

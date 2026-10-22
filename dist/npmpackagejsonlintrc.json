@@ -3,6 +3,7 @@
     "require-name": "error",
     "name-format": "error",
     "name-type": "error",
+    "valid-values-name-scope": ["error", ["@takudev-works"]],
     "version-type": "error",
     "version-format": "error",
     "type-type": "error",

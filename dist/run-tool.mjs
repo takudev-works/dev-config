@@ -82,7 +82,7 @@ export const tools = {
         ]
     }
 };
-export const resolveBin = (bin) => [join(srcDir, '..', 'node_modules', '.bin', bin), join(srcDir, '..', '..', '.bin', bin)].find((path) => existsSync(path)) ?? bin;
+export const resolveBin = (bin, from = srcDir) => [join(from, '..', 'node_modules', '.bin', bin), join(from, '..', '..', '..', '.bin', bin)].find((path) => existsSync(path)) ?? bin;
 export const runTool = ([name, ...args], { cwd = process.cwd(), spawn = spawnSync } = {}) => {
     const tool = name === undefined ? undefined : tools[name];
     if (tool === undefined) {
