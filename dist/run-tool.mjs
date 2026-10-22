@@ -15,7 +15,18 @@ export const ignoreFile = (name, repoIgnore, cwd) => {
     writeFileSync(merged, `${readFileSync(canonical(name), 'utf8')}\n${readFileSync(repoPath, 'utf8')}`);
     return merged;
 };
+const repoOrCanonical = (repoConfig, name, cwd) => {
+    const repoPath = join(cwd, repoConfig);
+    return existsSync(repoPath) ? repoPath : canonical(name);
+};
 export const tools = {
+    actionlint: {
+        bin: 'actionlint',
+        options: (cwd) => [
+            '-config-file',
+            repoOrCanonical('.github/actionlint.yaml', 'actionlint.yaml', cwd)
+        ]
+    },
     commitlint: {
         bin: 'commitlint',
         options: () => ['--config', canonical('commitlintrc.json')]
@@ -45,6 +56,16 @@ export const tools = {
             '--ignore-path',
             ignoreFile('textlintignore', '.textlintignore', cwd)
         ]
+    },
+    zizmor: {
+        bin: 'zizmor',
+        options: (cwd) => [
+            '--offline',
+            '--min-severity',
+            'low',
+            '--config',
+            repoOrCanonical('.github/zizmor.yml', 'zizmor.yml', cwd)
+        ]
     }
 };
 export const resolveBin = (bin) => [join(srcDir, '..', 'node_modules', '.bin', bin), join(srcDir, '..', '..', '.bin', bin)].find((path) => existsSync(path)) ?? bin;
@@ -60,6 +81,9 @@ export const runTool = ([name, ...args], { cwd = process.cwd(), spawn = spawnSyn
     });
     if (result.error) {
         console.error(result.error.message);
+        if ('code' in result.error && result.error.code === 'ENOENT') {
+            console.error(`${tool.bin} が見つからない。repo の mise.toml に入れ、mise install を実行する`);
+        }
         return 1;
     }
     return result.status ?? 1;

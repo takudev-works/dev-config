@@ -1,0 +1,4 @@
+rules:
+  # $/ の書き方にしないのは、actionlint がまだその書き方を知らず、エラーにするため
+  self-repository:
+    disable: true

@@ -40,6 +40,7 @@
   ],
   "words": [
     "anthropics",
+    "artipacked",
     "bunfig",
     "bunx",
     "Canva",
@@ -65,6 +66,7 @@
     "secretlint",
     "secretlintignore",
     "secretlintrc",
+    "shellcheck",
     "Taku",
     "takudev",
     "Takuya",
@@ -75,6 +77,7 @@
     "vcpu",
     "venv",
     "vercel",
-    "worktree"
+    "worktree",
+    "zizmor"
   ]
 }
