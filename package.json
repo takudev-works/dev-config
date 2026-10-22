@@ -1,9 +1,12 @@
 {
   "name": "dev-config",
-  "version": "5.8.0",
+  "version": "5.9.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
+  "bin": {
+    "dev-config": "src/cli.mjs"
+  },
   "files": [
     "src"
   ],
@@ -11,12 +14,12 @@
     "validate": "run-p validate:*",
     "validate:format": "prettier --check .",
     "validate:lint": "eslint .",
-    "validate:markdown": "markdownlint-cli2 --config src/markdownlint-cli2.jsonc \"**/*.md\"",
-    "validate:package-json": "npmPkgJsonLint --configFile src/npmpackagejsonlintrc.json \"**/package.json\"",
-    "validate:secrets": "secretlint --secretlintrc src/secretlintrc.json --secretlintignore src/secretlintignore \"**/*\"",
+    "validate:markdown": "bun src/cli.mjs markdownlint \"**/*.md\"",
+    "validate:package-json": "bun src/cli.mjs npm-package-json-lint \"**/package.json\"",
+    "validate:secrets": "bun src/cli.mjs secretlint \"**/*\"",
     "validate:spell": "cspell --no-progress \"**\"",
     "validate:test": "vitest run",
-    "validate:text": "textlint --config src/textlintrc.json --ignore-path src/textlintignore \"**/*.md\"",
+    "validate:text": "bun src/cli.mjs textlint \"**/*.md\"",
     "validate:type": "tsc && tsc -p tsconfig.vitest-config.json",
     "validate:workflows": "actionlint && zizmor --offline --min-severity low .github/workflows"
   },
