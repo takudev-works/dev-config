@@ -393,7 +393,7 @@ jobs:
   - actionlint は、ワークフローの構文、`${{ }}` の式、`needs`・`steps` の参照、action の入力の名前などの誤りを見る。`run:` のシェルは shellcheck で検査する
   - zizmor は、権限の広さ、checkout の資格情報の残し方、外から入る値の `run:` への埋め込みなど、セキュリティ上の問題を見る
 - git で管理しているシェルスクリプト（`*.sh`・`*.bash`）を shellcheck で検査する。意図してそう書いているところは、理由をコメントに書き、その行の前に `# shellcheck disable=<番号>` を付ける
-- 設定は `dist/actionlint.yaml`（Blacksmith の runner のラベル）と `dist/zizmor.yml` を使う。repo に `.github/actionlint.yaml`・`.github/zizmor.yml` があれば、そちらを使う
+- 設定は `dist/actionlint.yaml`（Blacksmith の runner のラベル）と `dist/zizmor.yml` を使う。repo に `.github/actionlint.yaml`・`.github/zizmor.yml` があれば、そちらを使う。lefthook と同じ `dev-config actionlint`・`dev-config zizmor` で動かすので、設定の選び方と引数は手元と CI で同じになる。`dev-config` コマンドが actionlint・zizmor を持つのは v6.1 からなので、それより前の dev-config を入れた repo では動かない。呼び出し先の SHA と package.json の版は、Renovate がそろえて上げる
 - actionlint・zizmor・shellcheck は、repo の `mise.toml` にある版を使う（手元の lefthook と同じ版にするため）。無ければ `reusable-validate.yml` の env の版を使う。どちらの版も Renovate が上げる。actionlint にも、runner の shellcheck ではなくこの版を使わせる
 - zizmor の指摘を、目的上そのままにするときは、理由をコメントに書き、指摘の行に `# zizmor: ignore[<指摘の名前>]` を付ける。`run: |` の中のシェルに書いても効かないので、`run: |` の行に付ける
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
