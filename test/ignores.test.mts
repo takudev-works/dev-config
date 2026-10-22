@@ -3,6 +3,7 @@ import { URL } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, test } from 'vitest';
 import eslintConfig from '../src/eslint.mjs';
+import markdownlintOptions from '../src/markdownlint-cli2.mjs';
 
 const ignoredDirs = [
   'node_modules',
@@ -44,7 +45,7 @@ const tools: Record<string, () => Promise<string[]>> = {
     eslintConfig
       .filter((c) => Object.keys(c).every((k) => k === 'ignores' || k === 'name'))
       .flatMap((c) => c.ignores ?? []),
-  markdownlint: async () => (await readJsonc('markdownlint-cli2.jsonc')).ignores ?? [],
+  markdownlint: async () => markdownlintOptions.ignores,
   secretlint: () => readLines('secretlintignore'),
   textlint: () => readLines('textlintignore')
 };

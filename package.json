@@ -1,6 +1,6 @@
 {
   "name": "dev-config",
-  "version": "6.1.0",
+  "version": "6.2.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "validate:build": "bun scripts/check-build.mts",
     "validate:format": "prettier --check .",
     "validate:lint": "eslint .",
-    "validate:markdown": "bun dist/cli.mjs markdownlint \"**/*.md\"",
+    "validate:markdown": "markdownlint-cli2 \"**/*.md\"",
     "validate:package-json": "bun dist/cli.mjs npm-package-json-lint \"**/package.json\"",
     "validate:secrets": "bun dist/cli.mjs secretlint \"**/*\"",
     "validate:spell": "cspell --no-progress \"**\"",

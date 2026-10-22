@@ -30,7 +30,7 @@ describe('正本の設定を渡してツールを動かす', () => {
   test.each([
     ['actionlint', 'actionlint', '-config-file', 'actionlint.yaml'],
     ['commitlint', 'commitlint', '--config', 'commitlintrc.json'],
-    ['markdownlint', 'markdownlint-cli2', '--config', 'markdownlint-cli2.jsonc'],
+    ['markdownlint', 'markdownlint-cli2', '--config', 'markdownlint-cli2.mjs'],
     ['npm-package-json-lint', 'npmPkgJsonLint', '--configFile', 'npmpackagejsonlintrc.json'],
     ['secretlint', 'secretlint', '--secretlintrc', 'secretlintrc.json'],
     ['textlint', 'textlint', '--config', 'textlintrc.json'],

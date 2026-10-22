@@ -6,7 +6,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
-| `dist/markdownlint-cli2.jsonc` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など） |
+| `dist/markdownlint-cli2.mjs` | markdownlint-cli2 | ルールと、どの repo でも検査しないもの（`node_modules`、`.venv`、`dist`、キャッシュ類など）。repo の `.markdownlint-cli2.mjs` から読む |
 | `dist/cspell.json` | cspell | 言語、日本語の文字を無視する正規表現、どの repo でも検査しないもの、どの repo でも出る単語 |
 | `dist/commitlintrc.json` | commitlint | Conventional Commits |
 | `dist/secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
@@ -53,11 +53,13 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 設定ファイルのパスを渡す必要があるツールは、`dev-config <ツール> [引数...]` で動かす。正本の設定のパスを足してツールを動かし、ツールの終了コードを返す。引数はそのままツールに渡る。
 
+コマンドで包むかどうかは、repo に置いた設定ファイルの中で正本を読み込めて、しかもツールとエディタの拡張がその設定ファイルを repo から自分で見つけられるかで決める。両方できるツール（ESLint・cspell・TypeScript・Prettier・markdownlint）は、repo の設定ファイルで正本を読み、包まずに動かす。どちらかができないツール（除外ファイルを 1 つしか渡せない textlint・secretlint、repo の外の設定を読めない actionlint・zizmor など）を包む。
+
 | `dev-config` の後に書く名前 | 動かすツール | 足す引数 |
 | --- | --- | --- |
 | `actionlint` | actionlint | `-config-file dist/actionlint.yaml`（repo に `.github/actionlint.yaml` があればそちら） |
 | `commitlint` | commitlint | `--config dist/commitlintrc.json` |
-| `markdownlint` | markdownlint-cli2 | `--config dist/markdownlint-cli2.jsonc` |
+| `markdownlint` | markdownlint-cli2 | `--config dist/markdownlint-cli2.mjs`（repo の `.markdownlint-cli2.mjs` も重ねて効く）。repo に `.markdownlint-cli2.mjs` があれば要らないが、plugin dev-config の hook が使うので残している |
 | `npm-package-json-lint` | npm-package-json-lint | `--configFile dist/npmpackagejsonlintrc.json` |
 | `secretlint` | secretlint | `--secretlintrc dist/secretlintrc.json --secretlintignore <除外>` |
 | `textlint` | textlint | `--config dist/textlintrc.json --ignore-path <除外>` |
@@ -75,7 +77,7 @@ package.json の scripts には、次のように書く。
 {
   "scripts": {
     "validate": "run-p validate:*",
-    "validate:markdown": "dev-config markdownlint \"**/*.md\"",
+    "validate:markdown": "markdownlint-cli2 \"**/*.md\"",
     "validate:package-json": "dev-config npm-package-json-lint \"**/package.json\"",
     "validate:secrets": "dev-config secretlint \"**/*\"",
     "validate:spell": "cspell --no-progress \"**\"",
@@ -101,7 +103,7 @@ pre-commit:
   commands:
     markdownlint:
       glob: '**/*.md'
-      run: bun dev-config markdownlint {staged_files}
+      run: bun markdownlint-cli2 {staged_files}
     textlint:
       glob: '**/*.md'
       run: bun dev-config textlint {staged_files}
@@ -145,19 +147,23 @@ lefthook の設定そのものを共有しない（`extends` や `remotes` を�
 
 ### markdownlint
 
-その repo だけで除外したいものは、コマンドの引数で渡す（`#` で始まる glob が除外）。
+repo のルートに `.markdownlint-cli2.mjs` を置き、正本を読む。その repo だけで除外したいものは、`ignores` の後ろに足す。
 
-- `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
-- 対象を正本の `globs` に書かないのは、そうすると引数の除外（`#…`）が効かなくなるため
-- lefthook のように検査するファイルを直接渡すときも、その repo だけの除外を引数で渡す。直接渡したファイルにも `#…` の除外は効く
+```js
+import base from 'dev-config/dist/markdownlint-cli2.mjs';
 
-Cursor・VS Code の拡張（vscode-markdownlint）には、repo の `.vscode/settings.json` で同じファイルを渡す。
-
-```json
-{
-  "markdownlint.configFile": "${workspaceFolder}/node_modules/dev-config/dist/markdownlint-cli2.jsonc"
-}
+export default { ...base, ignores: [...base.ignores, 'python/reference/**'] };
 ```
+
+足すものがなければ、`export { default } from 'dev-config/dist/markdownlint-cli2.mjs';` だけでよい。
+
+markdownlint-cli2 も Cursor・VS Code の拡張（vscode-markdownlint）も、このファイルを repo のルートから自分で見つける。そのため、scripts と lefthook では `--config` を渡さずに動かす（`markdownlint-cli2 "**/*.md"`、`bun markdownlint-cli2 {staged_files}`）。`.vscode/settings.json` の `markdownlint.configFile` も要らない。
+
+- JSONC の設定（`.markdownlint-cli2.jsonc`）にしないのは、JSONC では正本の `ignores` を読み込んで足せず、repo に除外の一覧を丸写しすることになるため
+- 拡張は、ワークスペースを信頼しているときだけ JS の設定を読む。`.markdownlint-cli2.mjs` を直したら、Cursor・VS Code を再起動する（拡張が JS を読み込んだまま持つため）
+- lefthook のように検査するファイルを直接渡しても、`ignores` の除外は効く
+- `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
+- `dist/markdownlint-cli2.jsonc` は、v6.1 までの書き方（`--config` や `.vscode/settings.json` で正本を渡す）の repo のために残している。中身は `dist/markdownlint-cli2.mjs` と同じで、ビルドで作る
 
 ルールは `default: true` ですべて有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
 
