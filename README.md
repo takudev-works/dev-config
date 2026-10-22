@@ -13,7 +13,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/secretlintignore` | secretlint | どの repo でも検査しないもの |
 | `dist/tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
 | `dist/eslint.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
-| `dist/vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
+| `dist/vitest.config.mjs` | Vitest | coverage の設定。置き場所を絞らずにすべての TS（`.ts`・`.tsx`・`.mts`・`.cts`）を対象にし、テスト・型の定義・設定ファイル・どの repo でも検査しないディレクトリを外す。4 つの指標すべてで 95% を閾値にする |
 | `dist/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `dist/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
 | `dist/textlintignore` | textlint | どの repo でも検査しないもの |
@@ -259,6 +259,12 @@ export default defineConfig({
 
 足すものがなければ、`export { default } from 'dev-config/dist/vitest.config.mjs';` だけでよい。TS から読むときの型の定義（`dist/vitest.config.d.mts`）は、ビルドで作られる。
 
+正本は、`src/` のような置き場所に絞らず、すべての TS を数える。置き場所は repo ごとに違い、絞ると、絞った外にテストの無いコードを足しても数字に出ないため。数えないのは、テスト（`*.test.*`・`*.spec.*`）、型の定義、設定ファイル（`*.config.*`）、テスト用のディレクトリ（`test/`・`tests/`・`__tests__/`）、どの repo でも検査しないディレクトリ（ほかのツールの除外と同じ一覧）。
+
+- 処理は import できる関数に置いてテストし、CLI の入口（`bin/` や `scripts/` のような、外の世界とのやり取りと `process.exit` だけのファイル）は薄くして、repo の `exclude` で外す。外すときは、なぜ外すかを設定ファイルのコメントに書く
+- 子プロセスとして動かしてテストしても、coverage には数えられない。数えたい処理は、テストから関数として呼ぶ
+- 入口と処理を 1 つのファイルに書くときは、入口の部分（`if (import.meta.main) { … }` など）だけを `/* v8 ignore start */`・`/* v8 ignore stop */` で外し、理由をコメントに書く
+
 ### Prettier
 
 package.json の `"prettier"` に `dev-config/dist/prettierrc.json` を書いて正本を読ませる。CLI もエディタの拡張も、ここから設定を見つける。repo に `.prettierrc` は置かない。
@@ -432,7 +438,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ## この repo の開発の準備
 
-この repo 自身も、`dist/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
+この repo 自身も、`dist/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。テストの coverage も、ルートの `vitest.config.mts` で正本を読んで測り、各 repo と同じ閾値（4 つの指標すべてで 95%）を守る。`src/cli/cli.mts` は、テストが子プロセスで dist の `cli.mjs` を動かして確かめていて、子プロセスは測れないので数えない。ビルドの手順（`scripts/`）もテストし、数える。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
 
 ### ビルド
 

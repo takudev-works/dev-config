@@ -97,6 +97,10 @@ describe('canonical', () => {
     );
   });
 
+  test('隣にあれば、隣のパスを返す（dist の並び）', () => {
+    expect(canonical('run-tool.mts')).toBe(join(src, 'cli/run-tool.mts'));
+  });
+
   test('どこにも無い名前は、自分の隣のパスを返す', () => {
     expect(canonical('missing.json')).toBe(join(src, 'cli/missing.json'));
   });
@@ -108,6 +112,11 @@ test('知らないツールの名前では、使い方を出して 2 で終わ�
   expect(spawned([]).code).toBe(2);
   expect(error).toHaveBeenCalledWith(expect.stringContaining('使い方: dev-config'));
   error.mockRestore();
+});
+
+test('ツールが終了コードを返さずに止まったら（signal で止められたときなど）1 で終わる', () => {
+  const spawn = vi.fn(() => ({ status: null }));
+  expect(runTool(['commitlint'], { cwd: emptyDir(), spawn })).toBe(1);
 });
 
 test('ツールを起動できなければ 1 で終わる', () => {

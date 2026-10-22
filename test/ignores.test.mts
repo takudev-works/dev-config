@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { describe, expect, test } from 'vitest';
 import eslintConfig from '../src/eslint/eslint.mjs';
 import markdownlintOptions from '../src/markdownlint/markdownlint-cli2.mjs';
+import { coverage } from '../src/vitest/vitest.config.mjs';
 
 const ignoredDirs = [
   'node_modules',
@@ -47,7 +48,8 @@ const tools: Record<string, () => Promise<string[]>> = {
       .flatMap((c) => c.ignores ?? []),
   markdownlint: async () => markdownlintOptions.ignores,
   secretlint: () => readLines('secretlint/secretlintignore'),
-  textlint: () => readLines('textlint/textlintignore')
+  textlint: () => readLines('textlint/textlintignore'),
+  vitest: async () => coverage.exclude.filter((pattern) => /^\*\*\/[^*{]+\/\*\*$/.test(pattern))
 };
 
 const dirOf = (pattern: string) => pattern.replace(/^\*\*\//, '').replace(/\/\*\*$/, '');
