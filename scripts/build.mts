@@ -10,7 +10,7 @@ import {
   writeFileSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import markdownlint from '../src/markdownlint/markdownlint-cli2.mjs';
@@ -23,9 +23,9 @@ const filesUnder = (dir: string): string[] =>
     entry.isDirectory() ? filesUnder(join(dir, entry.name)) : [join(dir, entry.name)]
   );
 
-const flattenInto = (outDir: string, files: string[], base: string) => {
+export const flattenInto = (outDir: string, files: string[], base: string) => {
   for (const file of files) {
-    const name = file.split('/').at(-1) ?? '';
+    const name = basename(file);
     const target = join(outDir, name);
     if (existsSync(target)) {
       throw new Error(`dist で ${name} が重なる: ${relative(base, file)}`);
@@ -34,16 +34,18 @@ const flattenInto = (outDir: string, files: string[], base: string) => {
   }
 };
 
-export const build = (outDir: string) => {
+const runTsc = (outDir: string) =>
+  spawnSync(
+    join(root, 'node_modules', '.bin', 'tsc'),
+    ['-p', join(root, 'tsconfig.build.json'), '--outDir', outDir],
+    { stdio: 'inherit' }
+  ).status;
+
+export const build = (outDir: string, compile: (outDir: string) => number | null = runTsc) => {
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
   const compiled = mkdtempSync(join(tmpdir(), 'dev-config-tsc-'));
-  const tsc = spawnSync(
-    join(root, 'node_modules', '.bin', 'tsc'),
-    ['-p', join(root, 'tsconfig.build.json'), '--outDir', compiled],
-    { stdio: 'inherit' }
-  );
-  if (tsc.status !== 0) throw new Error('tsc が失敗した');
+  if (compile(compiled) !== 0) throw new Error('tsc が失敗した');
   flattenInto(outDir, filesUnder(compiled), compiled);
   flattenInto(
     outDir,
@@ -59,6 +61,9 @@ export const build = (outDir: string) => {
   chmodSync(join(outDir, 'cli.mjs'), 0o755);
 };
 
+// 測らないのは、bun run build と validate:build が子プロセスとして動かし、子プロセスは測れないため
+/* v8 ignore start */
 if (import.meta.main) {
   build(resolve(root, process.argv[2] ?? 'dist'));
 }
+/* v8 ignore stop */

@@ -1,16 +1,17 @@
 import { expect, test } from 'vitest';
 import config, { coverage } from '../src/vitest/vitest.config.mjs';
 
-test.each(['src/a.ts', 'src/a.tsx', 'src/a.mts', 'src/a.cts'])(
-  '正本の coverage は %s の拡張子を数える',
-  (path) => {
-    const extensions = coverage.include[0]?.match(/\{(.+)\}/)?.[1]?.split(',') ?? [];
-    expect(extensions).toContain(path.split('.').at(-1));
-  }
-);
+test('正本の coverage は、置き場所を絞らずにすべての TS を数える', () => {
+  expect(coverage.include).toEqual(['**/*.{ts,tsx,mts,cts}']);
+});
 
-test('正本の coverage は、テストと型の定義を数えない', () => {
-  expect(coverage.exclude).toEqual(['src/**/*.test.{ts,tsx,mts,cts}', 'src/**/*.d.{ts,mts,cts}']);
+test.each([
+  ['テスト', '**/*.{test,spec}.{ts,tsx,mts,cts}'],
+  ['型の定義', '**/*.d.{ts,mts,cts}'],
+  ['設定ファイル', '**/*.config.{ts,mts,cts}'],
+  ['テスト用のディレクトリ', '**/{test,tests,__tests__}/**']
+])('正本の coverage は、%s を数えない', (_, pattern) => {
+  expect(coverage.exclude).toContain(pattern);
 });
 
 test('正本の coverage は、4 つの指標すべてで 95% を求める', () => {
