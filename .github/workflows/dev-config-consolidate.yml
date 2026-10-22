@@ -106,7 +106,7 @@ jobs:
             REPO: ${{ github.repository }}
             REPOS_DIR: ${{ runner.temp }}/repos
 
-            takudev-works の各 repo の設定のうち、2 つ以上の repo が同じ内容を書いているものを探し、dev-config の正本（`src/`）に寄せる PR を出してください。
+            takudev-works の各 repo の設定のうち、2 つ以上の repo が同じ内容を書いているものを探し、dev-config の正本の元（`src/`）に寄せる PR を出してください。
 
             1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config に寄せる in:title" --state open` で確かめる。開いていれば何もせずに終わる
             2. この repo の README.md を読み、`src/` の各ファイルの役割と、各 repo でどう読み込まれるかを知る
@@ -119,7 +119,7 @@ jobs:
                - `lefthook.yml` や package.json の scripts のうち、README の例に無いもの
             4. どの repo にも当てはまる理由があるものだけを `src/` の正本に足す。特定の repo の事情（その repo のディレクトリ名、使っているフレームワークだけの設定など）は寄せない。判断に迷うものは足さず、PR の本文に「確かめてほしいこと」として書く
             5. 正本に足したものに README の説明が要れば、README も直す
-            6. `bun run validate` が通ることを確かめる
+            6. `bun run build` で `dist/` を作り直し、`bun run validate` が通ることを確かめる。`dist/` もコミットに含める
             7. 足したものがあれば、`chore/dev-config-consolidate-<日付>` のブランチを作ってコミットし、main に向けて PR を 1 本出す。題名は「feat: 各 repo に重なる設定を dev-config に寄せる」。本文には、足したものごとに、どの repo のどのファイルに書かれていたかを書く。各 repo の重複は、新しい版が各 repo に入ったあとに、このワークフローの remove-duplicates が消す
             8. 足すものがなければ、PR を作らずに終わる
 
@@ -130,7 +130,7 @@ jobs:
             - package.json の版は上げない。版は人が上げる
           claude_args: |
             --add-dir ${{ runner.temp }}/repos
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run validate),Bash(bun install),Bash(bun install *)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run build),Bash(bun run validate),Bash(bun install),Bash(bun install *)"
 
   remove-duplicates:
     needs: list-repos
@@ -173,14 +173,14 @@ jobs:
             この repo の設定のうち、takudev-works/dev-config の正本と重なっているものを消す PR を出してください。
 
             1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config と重なる設定を消す in:title" --state open` で確かめる。開いていれば何もせずに終わる
-            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/dev-config` にある（README.md に各ファイルの役割がある）。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）
+            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/dev-config` にある（README.md に各ファイルの役割がある）。正本は `node_modules/dev-config/dist`（v6 以降）か `node_modules/dev-config/src`（v5 以前）にある。以下ではこれを「正本のディレクトリ」と書く。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）
             3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
-               - `cspell.json` の `words` や `ignorePaths` のうち、`node_modules/dev-config/src/cspell.json` にあるもの
-               - `eslint.config.*` の除外のうち、`node_modules/dev-config/src/eslint.config.mjs` にあるもの
-               - `renovate.json` の設定や `packageRules` のうち、`node_modules/dev-config/src/renovate.json` にあるもの
+               - `cspell.json` の `words` や `ignorePaths` のうち、正本のディレクトリの `cspell.json` にあるもの
+               - `eslint.config.*` の除外のうち、正本のディレクトリの `eslint.mjs`（v5 以前は `eslint.config.mjs`）にあるもの
+               - `renovate.json` の設定や `packageRules` のうち、正本のディレクトリの `renovate.json` にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
-            4. `node_modules/dev-config/src/cli.mjs` があるか（この版に `dev-config` コマンドがあるか）で、次のどちらかにする
-               - ある: package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/dev-config/src/...` など）を、README の「dev-config コマンド」のとおり `dev-config <ツール>` に置き換える。`.secretlintignore` と `.textlintignore` からは、正本（`node_modules/dev-config/src/secretlintignore`、`node_modules/dev-config/src/textlintignore`）と同じ行を消す。行が残らなければファイルを消す
+            4. 正本のディレクトリに `cli.mjs` があるか（この版に `dev-config` コマンドがあるか）で、次のどちらかにする
+               - ある: package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/dev-config/src/...` など）を、README の「dev-config コマンド」のとおり `dev-config <ツール>` に置き換える。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
                - ない: `.secretlintignore` と `.textlintignore` は行ごとには消さない。CLI に 1 つしか渡せないので、repo の除外ファイルには正本と同じ行が要る。中身が正本とまったく同じときだけ、ファイルを消し、package.json の scripts と `lefthook.yml` で正本を渡すように直す
             5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
             6. `bun run validate` が通ることを確かめる

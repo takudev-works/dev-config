@@ -1,26 +1,28 @@
 {
   "name": "dev-config",
-  "version": "5.9.0",
+  "version": "6.0.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
   "bin": {
-    "dev-config": "src/cli.mjs"
+    "dev-config": "dist/cli.mjs"
   },
   "files": [
-    "src"
+    "dist"
   ],
   "scripts": {
+    "build": "bun scripts/build.mts",
     "validate": "run-p validate:*",
+    "validate:build": "bun scripts/check-build.mts",
     "validate:format": "prettier --check .",
     "validate:lint": "eslint .",
-    "validate:markdown": "bun src/cli.mjs markdownlint \"**/*.md\"",
-    "validate:package-json": "bun src/cli.mjs npm-package-json-lint \"**/package.json\"",
-    "validate:secrets": "bun src/cli.mjs secretlint \"**/*\"",
+    "validate:markdown": "bun dist/cli.mjs markdownlint \"**/*.md\"",
+    "validate:package-json": "bun dist/cli.mjs npm-package-json-lint \"**/package.json\"",
+    "validate:secrets": "bun dist/cli.mjs secretlint \"**/*\"",
     "validate:spell": "cspell --no-progress \"**\"",
     "validate:test": "vitest run",
-    "validate:text": "bun src/cli.mjs textlint \"**/*.md\"",
-    "validate:type": "tsc && tsc -p tsconfig.vitest-config.json",
+    "validate:text": "bun dist/cli.mjs textlint \"**/*.md\"",
+    "validate:type": "tsc",
     "validate:workflows": "actionlint && zizmor --offline --min-severity low .github/workflows"
   },
   "dependencies": {
@@ -43,6 +45,9 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",
     "vitest": "5.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2"
   },
   "prettier": "./src/prettierrc.json"
 }

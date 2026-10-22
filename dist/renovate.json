@@ -1,0 +1,75 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "takudev-works の repo に共通の Renovate の設定",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "schedule": ["before 9am every weekday"],
+  "timezone": "Asia/Tokyo",
+  "assignees": ["t-i-0414"],
+  "commitMessagePrefix": "chore:",
+  "minimumReleaseAge": "7 days",
+  "rangeStrategy": "bump",
+  "prConcurrentLimit": 5,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 9am on Monday"]
+  },
+  "packageRules": [
+    {
+      "description": "mise の op（1Password CLI）は aqua の http 型パッケージで、Renovate は mise の aqua backend を github-tags と解釈するため必ず no-result になる。配信元に対応する GitHub リポジトリが無く、参照できる datasource が無い。バージョンは手動で上げる。",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["op"],
+      "enabled": false
+    },
+    {
+      "description": "typescript-eslint は TS 7 を実行時に拒否する（peerDependencies が typescript >=4.8.4 <6.1.0）。TS 7 に上げると lint が Error: typescript-eslint does not support TS 7.0 で落ちる。typescript-eslint が TS 7 に対応したら制限を外す（typescript-eslint issue 10940）。TypeScript は dev-config の依存なので、どの repo にも効くようにここに置く。",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "npm dependencies (non-major)",
+      "groupSlug": "npm-deps-non-major"
+    },
+    {
+      "matchManagers": ["pep621"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "python dependencies (non-major)",
+      "groupSlug": "python-deps-non-major"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "github actions (non-major)",
+      "groupSlug": "github-actions-non-major"
+    },
+    {
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "mise tools (non-major)",
+      "groupSlug": "mise-tools-non-major"
+    },
+    {
+      "matchManagers": ["terraform"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "terraform (non-major)",
+      "groupSlug": "terraform-non-major"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "takudev-works の共通設定は自分たちで出すので、公開から日を置かずに上げ、major も Dashboard での承認を待たない。package.json の版と、再利用できるワークフローの呼び出し先（depName は takudev-works/dev-config）を 1 本の PR で上げる。",
+      "matchDepNames": ["dev-config", "takudev-works/dev-config"],
+      "groupName": "dev-config",
+      "groupSlug": "dev-config",
+      "minimumReleaseAge": null,
+      "dependencyDashboardApproval": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  }
+}
