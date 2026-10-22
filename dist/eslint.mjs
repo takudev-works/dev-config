@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 export default defineConfig(globalIgnores([
     '**/node_modules/**',
@@ -23,4 +24,6 @@ export default defineConfig(globalIgnores([
     '**/.terraform/**',
     '**/.vercel/**',
     '**/.git/**'
-]), js.configs.recommended, tseslint.configs.recommended, prettier);
+]), js.configs.recommended, 
+// ブラウザのグローバルを入れないのは、ブラウザで動くコードを TS で書いていて、TS には no-undef を当てないため
+{ files: ['**/*.{js,mjs,cjs}'], languageOptions: { globals: globals.node } }, tseslint.configs.recommended, prettier);

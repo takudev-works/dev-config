@@ -12,7 +12,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/secretlintrc.json` | secretlint | preset-recommend。ローカルの開発用 DB の接続文字列だけ許す |
 | `dist/secretlintignore` | secretlint | どの repo でも検査しないもの |
 | `dist/tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
-| `dist/eslint.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
+| `dist/eslint.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、JS での Node のグローバル、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
 | `dist/vitest.config.mjs` | Vitest | coverage の設定。置き場所を絞らずにすべての TS（`.ts`・`.tsx`・`.mts`・`.cts`）を対象にし、テスト・型の定義・設定ファイル・どの repo でも検査しないディレクトリを外す。4 つの指標すべてで 95% を閾値にする |
 | `dist/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `dist/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
@@ -237,6 +237,8 @@ import base from 'dev-config/dist/eslint.mjs';
 
 export default [...base, { ignores: ['python/**'] }];
 ```
+
+JS（`.js`・`.mjs`・`.cjs`）では、Node のグローバル（`console`・`process`・`URL` など）を定義済みにしている。ブラウザのグローバル（`window`・`document` など）は定義しない。ブラウザで動くコードは TS で書き、TS には `no-undef` を当てない（型検査が未定義の名前を見つける）ため。ブラウザで動く JS を置く repo は、その repo の設定で `globals.browser` を足す。
 
 正本の名前を `eslint.config.mjs` にしないのは、typescript-eslint が `eslint.config.*` という名前のファイルの場所から `tsconfigRootDir` を推し量るため。正本がその名前だと、repo のルートではなく `node_modules/dev-config/dist` を推し量る。
 
