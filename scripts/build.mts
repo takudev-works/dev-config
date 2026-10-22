@@ -53,7 +53,7 @@ export const build = (outDir: string, compile: (outDir: string) => number | null
     src
   );
   rmSync(compiled, { recursive: true, force: true });
-  // JSONC もやめないのは、v6.1 までの書き方（--config や .vscode/settings.json でこのファイルを渡す）の repo があるため
+  // JSONC もやめないのは、エディタのユーザー設定から読むときに、信頼していないワークスペースでは拡張が JS を読まないため
   writeFileSync(
     join(outDir, 'markdownlint-cli2.jsonc'),
     `${JSON.stringify(markdownlint, null, 2)}\n`

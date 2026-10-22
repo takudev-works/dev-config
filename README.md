@@ -163,7 +163,7 @@ markdownlint-cli2 も Cursor・VS Code の拡張（vscode-markdownlint）も、�
 - 拡張は、ワークスペースを信頼しているときだけ JS の設定を読む。`.markdownlint-cli2.mjs` を直したら、Cursor・VS Code を再起動する（拡張が JS を読み込んだまま持つため）
 - lefthook のように検査するファイルを直接渡しても、`ignores` の除外は効く
 - `"**/*.md"` は `.github` のような `.` で始まるディレクトリの md も拾うので、それらを別に渡す必要はない
-- `dist/markdownlint-cli2.jsonc` は、v6.1 までの書き方（`--config` や `.vscode/settings.json` で正本を渡す）の repo のために残している。中身は `dist/markdownlint-cli2.mjs` と同じで、ビルドで作る
+- `dist/markdownlint-cli2.jsonc` は、エディタのユーザー設定（`markdownlint.configFile`）で、dev-config を入れていないフォルダの md にも正本を当てるために配る。dotfiles が `~/.config/markdownlint/` にリンクする。JS の設定にしないのは、拡張が信頼していないワークスペースでは JS を読まないため。中身は `dist/markdownlint-cli2.mjs` と同じで、ビルドで作る
 
 ルールは `default: true` ですべて有効にし、日本語の文書で誤検知が多いもの、書き方の好みでしかないものを無効にしている。
 
