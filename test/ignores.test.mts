@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, test } from 'vitest';
-import eslintConfig from '../src/eslint.mjs';
-import markdownlintOptions from '../src/markdownlint-cli2.mjs';
+import eslintConfig from '../src/eslint/eslint.mjs';
+import markdownlintOptions from '../src/markdownlint/markdownlint-cli2.mjs';
 
 const ignoredDirs = [
   'node_modules',
@@ -40,14 +40,14 @@ const readLines = async (path: string) =>
   (await read(path)).split('\n').filter((line) => line !== '' && !line.startsWith('#'));
 
 const tools: Record<string, () => Promise<string[]>> = {
-  cspell: async () => (await readJsonc('cspell.json')).ignorePaths ?? [],
+  cspell: async () => (await readJsonc('cspell/cspell.json')).ignorePaths ?? [],
   eslint: async () =>
     eslintConfig
       .filter((c) => Object.keys(c).every((k) => k === 'ignores' || k === 'name'))
       .flatMap((c) => c.ignores ?? []),
   markdownlint: async () => markdownlintOptions.ignores,
-  secretlint: () => readLines('secretlintignore'),
-  textlint: () => readLines('textlintignore')
+  secretlint: () => readLines('secretlint/secretlintignore'),
+  textlint: () => readLines('textlint/textlintignore')
 };
 
 const dirOf = (pattern: string) => pattern.replace(/^\*\*\//, '').replace(/\/\*\*$/, '');
