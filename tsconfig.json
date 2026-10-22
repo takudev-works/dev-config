@@ -4,5 +4,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["src/**/*.mts", "test/**/*.mts", "scripts/**/*.mts"]
+  "include": ["src/**/*.mts", "test/**/*.mts", "scripts/**/*.mts", "vitest.config.mts"]
 }

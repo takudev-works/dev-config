@@ -13,7 +13,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/secretlintignore` | secretlint | どの repo でも検査しないもの |
 | `dist/tsconfig.json` | TypeScript | strict 系の型検査の設定。`noEmit` |
 | `dist/eslint.mjs` | ESLint | `@eslint/js` と typescript-eslint の recommended、Prettier と重なるルールの無効化、どの repo でも検査しないもの |
-| `dist/vitest.config.mjs` | Vitest | coverage の設定。`src` の TS を対象に、4 つの指標すべてで 95% を閾値にする |
+| `dist/vitest.config.mjs` | Vitest | coverage の設定。`src` の TS（`.ts`・`.tsx`・`.mts`・`.cts`）を対象に、4 つの指標すべてで 95% を閾値にする |
 | `dist/prettierrc.json` | Prettier | 書式。Markdown は整形しない |
 | `dist/textlintrc.json` | textlint | 日本語の文章の検査。preset-ja-technical-writing と prh |
 | `dist/textlintignore` | textlint | どの repo でも検査しないもの |
@@ -432,7 +432,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ## この repo の開発の準備
 
-この repo 自身も、`dist/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
+この repo 自身も、`dist/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。テストの coverage も、ルートの `vitest.config.mts` で正本を読んで測り、各 repo と同じ閾値（4 つの指標すべてで 95%）を守る。`src/cli/cli.mts` は、テストが子プロセスで dist の `cli.mjs` を動かして確かめていて、子プロセスは測れないので数えない。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
 
 ### ビルド
 

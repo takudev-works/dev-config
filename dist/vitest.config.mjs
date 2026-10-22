@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitest/config';
 export const coverage = {
     provider: 'v8',
-    include: ['src/**/*.{ts,tsx}'],
-    exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.d.ts'],
+    include: ['src/**/*.{ts,tsx,mts,cts}'],
+    exclude: ['src/**/*.test.{ts,tsx,mts,cts}', 'src/**/*.d.{ts,mts,cts}'],
     reporter: ['text', 'lcov'],
     thresholds: {
         statements: 95,
