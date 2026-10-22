@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import console from 'node:console';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
@@ -8,7 +8,19 @@ import { fileURLToPath } from 'node:url';
 
 const srcDir = dirname(fileURLToPath(import.meta.url));
 
-const canonical = (name: string) => join(srcDir, name);
+// どの tool のディレクトリにあるかを表に持たないのは、src に正本を足すたびに表を直す手間と直し忘れを避けるため
+export const canonical = (name: string) => {
+  const beside = join(srcDir, name);
+  if (existsSync(beside)) return beside;
+  const sourceNames = [name, name.replace(/\.mjs$/, '.mts')];
+  for (const dir of readdirSync(join(srcDir, '..'))) {
+    const found = sourceNames
+      .map((sourceName) => join(srcDir, '..', dir, sourceName))
+      .find((path) => existsSync(path));
+    if (found !== undefined) return found;
+  }
+  return beside;
+};
 
 type Tool = {
   bin: string;

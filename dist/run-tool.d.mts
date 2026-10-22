@@ -1,3 +1,4 @@
+export declare const canonical: (name: string) => string;
 type Tool = {
     bin: string;
     options: (cwd: string) => string[];

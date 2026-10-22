@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { URL, fileURLToPath } from 'node:url';
 import { describe, expect, test, vi } from 'vitest';
-import { resolveBin, runTool } from '../src/run-tool.mjs';
+import { canonical, resolveBin, runTool } from '../src/cli/run-tool.mjs';
 
 const src = fileURLToPath(new URL('../src/', import.meta.url));
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
@@ -28,13 +28,18 @@ const valueOf = (args: string[], flag: string) => args[args.indexOf(flag) + 1] ?
 
 describe('正本の設定を渡してツールを動かす', () => {
   test.each([
-    ['actionlint', 'actionlint', '-config-file', 'actionlint.yaml'],
-    ['commitlint', 'commitlint', '--config', 'commitlintrc.json'],
-    ['markdownlint', 'markdownlint-cli2', '--config', 'markdownlint-cli2.mjs'],
-    ['npm-package-json-lint', 'npmPkgJsonLint', '--configFile', 'npmpackagejsonlintrc.json'],
-    ['secretlint', 'secretlint', '--secretlintrc', 'secretlintrc.json'],
-    ['textlint', 'textlint', '--config', 'textlintrc.json'],
-    ['zizmor', 'zizmor', '--config', 'zizmor.yml']
+    ['actionlint', 'actionlint', '-config-file', 'github-actions/actionlint.yaml'],
+    ['commitlint', 'commitlint', '--config', 'commitlint/commitlintrc.json'],
+    ['markdownlint', 'markdownlint-cli2', '--config', 'markdownlint/markdownlint-cli2.mts'],
+    [
+      'npm-package-json-lint',
+      'npmPkgJsonLint',
+      '--configFile',
+      'npm-package-json-lint/npmpackagejsonlintrc.json'
+    ],
+    ['secretlint', 'secretlint', '--secretlintrc', 'secretlint/secretlintrc.json'],
+    ['textlint', 'textlint', '--config', 'textlint/textlintrc.json'],
+    ['zizmor', 'zizmor', '--config', 'github-actions/zizmor.yml']
   ])('%s', (name, bin, flag, file) => {
     const { code, bin: actualBin, args } = spawned([name, 'a.md']);
     expect(code).toBe(0);
@@ -45,8 +50,8 @@ describe('正本の設定を渡してツールを動かす', () => {
 });
 
 describe.each([
-  ['textlint', '--ignore-path', 'textlintignore', '.textlintignore'],
-  ['secretlint', '--secretlintignore', 'secretlintignore', '.secretlintignore']
+  ['textlint', '--ignore-path', 'textlint/textlintignore', '.textlintignore'],
+  ['secretlint', '--secretlintignore', 'secretlint/secretlintignore', '.secretlintignore']
 ])('%s の除外', (name, flag, file, repoIgnore) => {
   test('repo に除外ファイルが無ければ、正本の除外ファイルを渡す', () => {
     const { args } = spawned([name]);
@@ -79,6 +84,22 @@ describe.each([
 test('zizmor は、ネットワークを使わず、low より重い指摘だけを出す', () => {
   const { args } = spawned(['zizmor', '.github/workflows']);
   expect(args).toEqual(expect.arrayContaining(['--offline', '--min-severity', 'low']));
+});
+
+describe('canonical', () => {
+  test('src では、tool ごとのディレクトリから正本を探す', () => {
+    expect(canonical('prettierrc.json')).toBe(join(src, 'prettier/prettierrc.json'));
+  });
+
+  test('src では、.mjs の正本を元の .mts から探す', () => {
+    expect(canonical('markdownlint-cli2.mjs')).toBe(
+      join(src, 'markdownlint/markdownlint-cli2.mts')
+    );
+  });
+
+  test('どこにも無い名前は、自分の隣のパスを返す', () => {
+    expect(canonical('missing.json')).toBe(join(src, 'cli/missing.json'));
+  });
 });
 
 test('知らないツールの名前では、使い方を出して 2 で終わる', () => {

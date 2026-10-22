@@ -49,5 +49,5 @@
   "devDependencies": {
     "@types/node": "^24.19.2"
   },
-  "prettier": "./src/prettierrc.json"
+  "prettier": "./src/prettier/prettierrc.json"
 }

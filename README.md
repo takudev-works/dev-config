@@ -22,7 +22,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
 | `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate はこの repo の main の `src/renovate.json` を直接読む。`dist/renovate.json` は、各 repo が入れた版の中身と比べるための写し |
 
-正本の元は `src/` に置き、`bun run build` で `dist/` を作る（「この repo の開発の準備」を参照）。ルートには、この repo 自身を検査するための設定を置く。
+正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`bun run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。`src/renovate.json` だけは、Renovate が main のこの場所を直接読むので `src/` の直下に置く。ルートには、この repo 自身を検査するための設定を置く。
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
@@ -189,7 +189,7 @@ preset-ja-technical-writing のうち、次のルールを変えている。ほ�
 | sentence-length | 150 文字まで（既定は 100） | 表の行や、パスとコマンドを含む文が長くなりやすい |
 | no-exclamation-question-mark | 無効 | Claude への指示や問いかけで `?` を使う |
 
-prh の辞書 `src/prh.yml` には、表記を 1 つに決めた用語を足していく。辞書に無い用語を自分で作らない（組織の「文書スタイル」）ことを、表記のレベルで守らせる。
+prh の辞書 `src/textlint/prh.yml` には、表記を 1 つに決めた用語を足していく。辞書に無い用語を自分で作らない（組織の「文書スタイル」）ことを、表記のレベルで守らせる。
 
 ### cspell
 
@@ -436,7 +436,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ### ビルド
 
-`src/` の TS（`*.mts`）を `tsc` で `dist/` の JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）を `dist/` に写す。`src/` を変えたら `bun run build` を実行し、`dist/` も一緒にコミットする。
+`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `bun run build` を実行し、`dist/` も一緒にコミットする。
 
 - `dist/` をコミットするのは、各 repo が git の依存として入れるときに、bun が依存の `prepare` を動かさない（信頼していない依存のスクリプトとして止める）ため。入れるときにビルドできない
 - `validate:build` が一時ディレクトリにビルドし直し、`dist/` と違えば落ちる。lefthook も `src/` を変えたコミットで同じ検査をする
