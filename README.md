@@ -55,11 +55,13 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 | `dev-config` の後に書く名前 | 動かすツール | 足す引数 |
 | --- | --- | --- |
+| `actionlint` | actionlint | `-config-file dist/actionlint.yaml`（repo に `.github/actionlint.yaml` があればそちら） |
 | `commitlint` | commitlint | `--config dist/commitlintrc.json` |
 | `markdownlint` | markdownlint-cli2 | `--config dist/markdownlint-cli2.jsonc` |
 | `npm-package-json-lint` | npm-package-json-lint | `--configFile dist/npmpackagejsonlintrc.json` |
 | `secretlint` | secretlint | `--secretlintrc dist/secretlintrc.json --secretlintignore <除外>` |
 | `textlint` | textlint | `--config dist/textlintrc.json --ignore-path <除外>` |
+| `zizmor` | zizmor | `--offline --min-severity low --config dist/zizmor.yml`（repo に `.github/zizmor.yml` があればそちら） |
 
 textlint と secretlint の除外は、repo に `.textlintignore`・`.secretlintignore` があれば、正本の除外の後ろにその行を足したファイルを渡す。無ければ正本の除外をそのまま渡す。両ツールとも除外ファイルを 1 つしか渡せないので、repo には正本に足したい行だけを書く。
 
@@ -118,9 +120,24 @@ pre-commit:
     shellcheck:
       glob: '**/*.{sh,bash}'
       run: shellcheck {staged_files}
+    actionlint:
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: bun dev-config actionlint {staged_files}
+    zizmor:
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: bun dev-config zizmor {staged_files}
 ```
 
-shellcheck は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に入れる（`shellcheck = "<版>"`）。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。
+shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。
+
+```toml
+[tools]
+actionlint = "<版>"
+zizmor = "<版>"
+shellcheck = "<版>"
+```
+
+ワークフローを CI で検査するだけでなく lefthook でも止めるのは、CI まで待たずに直せて、CI を回し直さずに済むため。エディタの拡張は、actionlint には信頼できるものが無く、zizmor の公式の拡張は repo の外（`node_modules/dev-config/dist`）の設定を見つけられないので使わない。
 
 `glob_matcher: doublestar` は、`**/*.md` をルート直下の md にも一致させるため。lefthook の既定では `**` が 1 階層以上の意味になり、ルート直下のファイルが検査されない。
 
@@ -365,8 +382,7 @@ jobs:
   - zizmor は、権限の広さ、checkout の資格情報の残し方、外から入る値の `run:` への埋め込みなど、セキュリティ上の問題を見る
 - git で管理しているシェルスクリプト（`*.sh`・`*.bash`）を shellcheck で検査する。意図してそう書いているところは、理由をコメントに書き、その行の前に `# shellcheck disable=<番号>` を付ける
 - 設定は `dist/actionlint.yaml`（Blacksmith の runner のラベル）と `dist/zizmor.yml` を使う。repo に `.github/actionlint.yaml`・`.github/zizmor.yml` があれば、そちらを使う
-- actionlint と zizmor の版は `reusable-validate.yml` の env で固定し、Renovate が上げる。各 repo の `mise.toml` には書かない
-- shellcheck は、repo の `mise.toml` にある版を使う（手元の lefthook と同じ版にするため）。無ければ `reusable-validate.yml` の env の版を使う。actionlint にも、runner の shellcheck ではなくこの版を使わせる
+- actionlint・zizmor・shellcheck は、repo の `mise.toml` にある版を使う（手元の lefthook と同じ版にするため）。無ければ `reusable-validate.yml` の env の版を使う。どちらの版も Renovate が上げる。actionlint にも、runner の shellcheck ではなくこの版を使わせる
 - zizmor の指摘を、目的上そのままにするときは、理由をコメントに書き、指摘の行に `# zizmor: ignore[<指摘の名前>]` を付ける。`run: |` の中のシェルに書いても効かないので、`run: |` の行に付ける
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 - 組織の ruleset `dev-config` は、全 repo の既定のブランチと `main`・`staging`・`develop` にかかる。この check のほかに、承認 1 件、CODEOWNERS のレビュー、push で古い承認を取り消す、会話の解決、merge 方法は merge と squash、force push と削除の禁止を求める。組織の Owner は常に迂回できるので、自分の PR は迂回して merge する。repo だけの検査は、repo の ruleset で必須の check にせず、その repo の `validate:*` に足す。repo の ruleset を作ると、守るブランチと迂回できる人を組織の ruleset と 2 か所で持つことになるため

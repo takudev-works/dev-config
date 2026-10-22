@@ -34,7 +34,6 @@ jobs:
           [ -f "$config" ] || config=dist/commitlintrc.json
           printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
           bun commitlint --config "$config" --from "$BASE_SHA" --to "$HEAD_SHA"
-      # 各 repo の mise.toml に入れさせないのは、版を repo ごとに持たせず、ここでそろえて上げるため
       - name: ワークフローとシェルスクリプトを actionlint・zizmor・shellcheck で検査する
         env:
           # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.*)$
@@ -44,11 +43,13 @@ jobs:
           # renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.*)$
           SHELLCHECK_VERSION: 0.11.0
         run: |
-          shellcheck_tool="shellcheck@$SHELLCHECK_VERSION"
-          # env の版を使わないのは、repo の mise.toml に shellcheck があれば、手元の lefthook と同じ版で検査するため
-          if mise which shellcheck >/dev/null 2>&1; then
-            shellcheck_tool=shellcheck
-          fi
+          # env の版を使わないのは、repo の mise.toml にあれば、手元の lefthook と同じ版で検査するため
+          tool() {
+            if mise which "$1" >/dev/null 2>&1; then echo "$1"; else echo "$1@$2"; fi
+          }
+          shellcheck_tool=$(tool shellcheck "$SHELLCHECK_VERSION")
+          actionlint_tool=$(tool actionlint "$ACTIONLINT_VERSION")
+          zizmor_tool=$(tool zizmor "$ZIZMOR_VERSION")
           git ls-files -z '*.sh' '*.bash' | xargs -0 -r mise exec "$shellcheck_tool" -- shellcheck
           dir=node_modules/dev-config/dist
           [ -d "$dir" ] || dir=dist
@@ -57,6 +58,6 @@ jobs:
           zizmor_config=.github/zizmor.yml
           [ -f "$zizmor_config" ] || zizmor_config=$dir/zizmor.yml
           # runner の shellcheck を使わせないのは、版が runner の image で変わり、repo によって結果が変わるため
-          mise exec "$shellcheck_tool" "actionlint@$ACTIONLINT_VERSION" -- actionlint -config-file "$actionlint_config"
-          mise exec "zizmor@$ZIZMOR_VERSION" -- zizmor --offline --min-severity low --config "$zizmor_config" .github/workflows
+          mise exec "$shellcheck_tool" "$actionlint_tool" -- actionlint -config-file "$actionlint_config"
+          mise exec "$zizmor_tool" -- zizmor --offline --min-severity low --config "$zizmor_config" .github/workflows
       - run: bun run validate

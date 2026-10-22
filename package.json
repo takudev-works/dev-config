@@ -23,7 +23,7 @@
     "validate:test": "vitest run",
     "validate:text": "bun dist/cli.mjs textlint \"**/*.md\"",
     "validate:type": "tsc",
-    "validate:workflows": "actionlint -config-file dist/actionlint.yaml && zizmor --offline --min-severity low --config dist/zizmor.yml .github/workflows"
+    "validate:workflows": "bun dist/cli.mjs actionlint && bun dist/cli.mjs zizmor .github/workflows"
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",

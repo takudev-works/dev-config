@@ -29,6 +29,12 @@ pre-commit:
     shellcheck:
       glob: '**/*.{sh,bash}'
       run: shellcheck {staged_files}
+    actionlint:
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: bun dist/cli.mjs actionlint {staged_files}
+    zizmor:
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: bun dist/cli.mjs zizmor {staged_files}
     build:
       glob: 'src/**'
       run: bun run validate:build
