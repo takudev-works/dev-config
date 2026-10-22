@@ -106,7 +106,8 @@ test('ツールが見つからなければ、mise で入れるよう知らせる
   error.mockRestore();
 });
 
-describe('ビルドした dev-config コマンド', () => {
+// 既定の 5 秒にしないのは、commitlint を子プロセスで起動し、CI で検査を並べて回すと 5 秒を超えることがあるため
+describe('ビルドした dev-config コマンド', { timeout: 30_000 }, () => {
   const commitlint = (message: string) =>
     spawnSync(process.execPath, [cli, 'commitlint'], { input: message, encoding: 'utf8' }).status;
 
