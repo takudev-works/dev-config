@@ -56,7 +56,7 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 }
 ```
 
-ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の `bun.lock` で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。
+ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の `bun.lock` で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。ただし `vitest` と `@vitest/coverage-v8` は固定する。`@vitest/coverage-v8` の peerDependencies は vitest の完全に同じ版を求め、範囲で書くと、lock の更新で 2 つの版がずれうるため。
 
 ### dev-config コマンド
 
@@ -139,13 +139,19 @@ pre-commit:
       run: bun dev-config zizmor {staged_files}
 ```
 
-shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。
+shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に、bun・lefthook と一緒に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。`[tasks.setup]` は、「README」の「開発の準備」で使う。
 
 ```toml
 [tools]
+bun = "<版>"
+lefthook = "<版>"
 actionlint = "<版>"
 zizmor = "<版>"
 shellcheck = "<版>"
+
+[tasks.setup]
+description = "依存と git hook を入れる"
+run = ["bun install --frozen-lockfile", "lefthook install"]
 ```
 
 ワークフローを CI で検査するだけでなく lefthook でも止めるのは、CI まで待たずに直せて、CI を回し直さずに済むため。エディタの拡張は、actionlint には信頼できるものが無く、zizmor の公式の拡張は repo の外（`node_modules/@takudev-works/dev-config/dist`）の設定を見つけられないので使わない。
@@ -198,7 +204,7 @@ preset-ja-technical-writing のうち、次のルールを変えている。ほ�
 | sentence-length | 150 文字まで（既定は 100） | 表の行や、パスとコマンドを含む文が長くなりやすい |
 | no-exclamation-question-mark | 無効 | Claude への指示や問いかけで `?` を使う |
 
-prh の辞書 `src/textlint/prh.yml` には、表記を 1 つに決めた用語を足していく。辞書に無い用語を自分で作らない（組織の「文書スタイル」）ことを、表記のレベルで守らせる。
+prh の辞書（`dist/prh.yml`。元は `src/textlint/prh.yml`）は、今は空。表記を 1 つに決めた用語ができたら足していく。
 
 ### cspell
 
@@ -253,7 +259,7 @@ TypeScript と typescript-eslint の版は、この repo でそろえて上げ�
 
 ### Vitest
 
-TS のある repo にはテストを書き、coverage の閾値（4 つの指標すべてで 95%）を守る。repo の `vitest.config.ts` で正本を読み、repo だけの除外や設定を足す。
+TS のある repo にはテストを書き、coverage の閾値（4 つの指標すべてで 95%）を守る。repo の `vitest.config.mts` で正本を読み、repo だけの除外や設定を足す。`vitest.config.ts` にしないのは、package.json に `"type": "module"` の無い repo では、Vite が「ESM を CommonJS として読んでいる」と警告するため。
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -302,8 +308,10 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | 上げ方 | 公開から 7 日たった版だけを上げる。範囲指定（`^` など）の下限も上げる |
 | まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる |
 | major | Dependency Dashboard で承認してから PR を出す |
-| TypeScript | 7 未満に止める。typescript-eslint が TS 7 にまだ対応していないため |
-| `dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
+| TypeScript | 6.1 未満に止める。typescript-eslint の peerDependencies が `<6.1.0` で、それより新しい TS では lint が落ちるため |
+| `@takudev-works/dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
+| mise の `op` | 上げない。Renovate が版を調べる先を持たないため。手で上げる |
+| 脆弱性の PR | ラベルを `security` にする |
 
 設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
@@ -325,7 +333,7 @@ repo の `.github/CODEOWNERS` に `* @t-i-0414` を書く。Renovate や Claude 
 
 ### README
 
-repo の README に「開発の準備」の節を置き、手元で最初に実行することを書く。repo だけの準備（認証、DB、`.env` など）があれば、この後ろに足す。
+repo の README に「開発の準備」の節を置き、手元で最初に実行することを書く。`mise run setup` は、`mise.toml` の `[tasks.setup]`（「lefthook」を参照）を動かす。repo だけの準備（認証、DB、`.env` など）があれば、この後ろに足す。
 
 ````markdown
 ## 開発の準備
@@ -333,7 +341,7 @@ repo の README に「開発の準備」の節を置き、手元で最初に実�
 手元では次の順に実行する。
 
 ```sh
-mise install      # mise.toml の版のツールを入れる
+mise install      # mise.toml の版の bun、lefthook、actionlint、zizmor、shellcheck を入れる
 mise run setup    # 依存と git hook を入れる
 bun run validate  # CI と同じ検査
 ```
@@ -347,7 +355,7 @@ bun run validate  # CI と同じ検査
 
 | ワークフロー | 中身 |
 | --- | --- |
-| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
@@ -404,7 +412,9 @@ jobs:
   - actionlint は、ワークフローの構文、`${{ }}` の式、`needs`・`steps` の参照、action の入力の名前などの誤りを見る。`run:` のシェルは shellcheck で検査する
   - zizmor は、権限の広さ、checkout の資格情報の残し方、外から入る値の `run:` への埋め込みなど、セキュリティ上の問題を見る
 - git で管理しているシェルスクリプト（`*.sh`・`*.bash`）を shellcheck で検査する。意図してそう書いているところは、理由をコメントに書き、その行の前に `# shellcheck disable=<番号>` を付ける
-- 設定は `dist/actionlint.yaml`（Blacksmith の runner のラベル）と `dist/zizmor.yml` を使う。repo に `.github/actionlint.yaml`・`.github/zizmor.yml` があれば、そちらを使う。lefthook と同じ `dev-config actionlint`・`dev-config zizmor` で動かすので、設定の選び方と引数は手元と CI で同じになる。`dev-config` コマンドが actionlint・zizmor を持つのは v6.1 からなので、それより前の dev-config を入れた repo では動かない。呼び出し先の SHA と package.json の版は、Renovate がそろえて上げる
+- 設定は `dist/actionlint.yaml`（Blacksmith の runner のラベル）と `dist/zizmor.yml` を使う。repo に `.github/actionlint.yaml`・`.github/zizmor.yml` があれば、そちらを使う。lefthook と同じ `dev-config actionlint`・`dev-config zizmor` で動かすので、設定の選び方と引数は手元と CI で同じになる
+- repo の `.github/zizmor.yml` は、正本に重ねるのではなく置き換える。置くときは、正本の `rules`（`self-repository` の無効化と、`dangerous-triggers` で `claude.yml` を外すもの）も写す
+- ワークフローは `node_modules/@takudev-works/dev-config/dist/` の `cli.mjs` を動かすので、呼び出し先と package.json の dev-config は、どちらも v8 以上にそろえる。呼び出し先の SHA と package.json の版は、Renovate がそろえて上げる
 - actionlint・zizmor・shellcheck は、repo の `mise.toml` にある版を使う（手元の lefthook と同じ版にするため）。無ければ `reusable-validate.yml` の env の版を使う。どちらの版も Renovate が上げる。actionlint にも、runner の shellcheck ではなくこの版を使わせる
 - zizmor の指摘を、目的上そのままにするときは、理由をコメントに書き、指摘の行に `# zizmor: ignore[<指摘の名前>]` を付ける。`run: |` の中のシェルに書いても効かないので、`run: |` の行に付ける
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
@@ -449,14 +459,15 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ## この repo の開発の準備
 
-この repo 自身も、`dist/` の正本で検査する。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 5 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。テストの coverage も、ルートの `vitest.config.mts` で正本を読んで測り、各 repo と同じ閾値（4 つの指標すべてで 95%）を守る。`src/cli/cli.mts` は、テストが子プロセスで dist の `cli.mjs` を動かして確かめていて、子プロセスは測れないので数えない。ビルドの手順（`scripts/`）もテストし、数える。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
+この repo 自身も正本で検査する。ESLint・markdownlint と `dev-config` コマンドで動かすツールは `dist/` の正本を、Prettier・TypeScript・cspell・Vitest は `src/` の正本を読む。正本そのものの中身は `test/` で検査する（どの repo でも検査しないディレクトリが 6 つのツールの除外でそろっていること、commitlint が日本語の subject を通すこと、各 repo の書き方で `dist/` の型が通ることなど）。テストの coverage も、ルートの `vitest.config.mts` で正本を読んで測り、各 repo と同じ閾値（4 つの指標すべてで 95%）を守る。`src/cli/cli.mts` は、テストが子プロセスで dist の `cli.mjs` を動かして確かめていて、子プロセスは測れないので数えない。ビルドの手順（`scripts/`）もテストし、数える。各 repo が呼ぶワークフローの正本なので、`.github/workflows` も actionlint と zizmor で検査する（`validate:workflows`）。
 
 ### ビルド
 
 `src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `bun run build` を実行し、`dist/` も一緒にコミットする。
 
 - `dist/` をコミットするのは、各 repo が git の依存として入れるときに、bun が依存の `prepare` を動かさない（信頼していない依存のスクリプトとして止める）ため。入れるときにビルドできない
-- `validate:build` が一時ディレクトリにビルドし直し、`dist/` と違えば落ちる。lefthook も `src/` を変えたコミットで同じ検査をする
+- `validate:build` が一時ディレクトリにビルドし直し、`dist/` と違えば落ちる。lefthook も、`src/`・`dist/`・`scripts/`・`tsconfig.build.json` を変えたコミットで同じ検査をする
+- 型の定義は、各 repo が import するもの（ESLint・markdownlint・Vitest の正本）にだけ置く。`src/cli/` のものは `dev-config` コマンドとして動かすだけなので置かない
 - `dist/` は Prettier の対象から外している（`tsc` の出力の書式は Prettier と違う）。ESLint・cspell などは、正本の除外に `dist` があるので対象にならない
 
 手元では次の順に実行する。

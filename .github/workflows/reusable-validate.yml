@@ -28,10 +28,10 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          config=node_modules/@takudev-works/dev-config/dist/commitlintrc.json
-          [ -f "$config" ] || config=dist/commitlintrc.json
-          printf '%s\n' "$PR_TITLE" | bun commitlint --config "$config"
-          bun commitlint --config "$config" --from "$BASE_SHA" --to "$HEAD_SHA"
+          cli=node_modules/@takudev-works/dev-config/dist/cli.mjs
+          [ -f "$cli" ] || cli=dist/cli.mjs
+          printf '%s\n' "$PR_TITLE" | bun "$cli" commitlint
+          bun "$cli" commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
       - name: ワークフローとシェルスクリプトを actionlint・zizmor・shellcheck で検査する
         env:
           # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.*)$

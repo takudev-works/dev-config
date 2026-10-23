@@ -9,7 +9,7 @@ import {
   rmSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -44,7 +44,13 @@ export const build = (outDir: string, compile: (outDir: string) => number | null
   mkdirSync(outDir, { recursive: true });
   const compiled = mkdtempSync(join(tmpdir(), 'dev-config-tsc-'));
   if (compile(compiled) !== 0) throw new Error('tsc が失敗した');
-  flattenInto(outDir, filesUnder(compiled), compiled);
+  flattenInto(
+    outDir,
+    filesUnder(compiled).filter(
+      (file) => !(dirname(file) === join(compiled, 'cli') && file.endsWith('.d.mts'))
+    ),
+    compiled
+  );
   flattenInto(
     outDir,
     filesUnder(src).filter((file) => !file.endsWith('.mts')),

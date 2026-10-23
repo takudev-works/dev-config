@@ -8,7 +8,7 @@ on:
 
 jobs:
   claude:
-    # 起動した人だけでなく prompt の本文を書いた author も、repo に書き込める人に限る。
+    # 起動した人だけで絞らないのは、repo に書き込めない人が書いた本文でも、書き込める人の操作で prompt になるため。
     # 呼び出す側の triggers に `assigned` を入れないのも、owner の操作で他人の書いた本文が prompt になるのを防ぐため
     if: |
       (

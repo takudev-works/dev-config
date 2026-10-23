@@ -36,5 +36,9 @@ pre-commit:
       glob: '.github/workflows/*.{yml,yaml}'
       run: bun dist/cli.mjs zizmor {staged_files}
     build:
-      glob: 'src/**'
+      glob:
+        - 'src/**'
+        - 'dist/**'
+        - 'scripts/**'
+        - 'tsconfig.build.json'
       run: bun run validate:build
