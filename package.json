@@ -1,6 +1,6 @@
 {
   "name": "@takudev-works/dev-config",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
