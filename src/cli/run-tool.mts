@@ -6,16 +6,16 @@ import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-const srcDir = dirname(fileURLToPath(import.meta.url));
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 
 // どの tool のディレクトリにあるかを表に持たないのは、src に正本を足すたびに表を直す手間と直し忘れを避けるため
 export const canonical = (name: string) => {
-  const beside = join(srcDir, name);
+  const beside = join(moduleDir, name);
   if (existsSync(beside)) return beside;
   const sourceNames = [name, name.replace(/\.mjs$/, '.mts')];
-  for (const dir of readdirSync(join(srcDir, '..'))) {
+  for (const dir of readdirSync(join(moduleDir, '..'))) {
     const found = sourceNames
-      .map((sourceName) => join(srcDir, '..', dir, sourceName))
+      .map((sourceName) => join(moduleDir, '..', dir, sourceName))
       .find((path) => existsSync(path));
     if (found !== undefined) return found;
   }
@@ -99,7 +99,7 @@ export const tools: Record<string, Tool> = {
   }
 };
 
-export const resolveBin = (bin: string, from = srcDir) =>
+export const resolveBin = (bin: string, from = moduleDir) =>
   [join(from, '..', 'node_modules', '.bin', bin), join(from, '..', '..', '..', '.bin', bin)].find(
     (path) => existsSync(path)
   ) ?? bin;

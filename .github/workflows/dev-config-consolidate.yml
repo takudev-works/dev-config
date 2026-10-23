@@ -2,7 +2,7 @@ name: dev-config consolidate
 
 on:
   schedule:
-    # 毎週月曜 9:30（日本時間）
+    # 日本時間（毎週月曜 9:30）で書かないのは、schedule の cron が UTC で動くため
     - cron: '30 0 * * 1'
   workflow_dispatch:
 
@@ -177,9 +177,12 @@ jobs:
             3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
                - `cspell.json` の `words` や `ignorePaths` のうち、正本のディレクトリの `cspell.json` にあるもの
                - `eslint.config.*` の除外のうち、正本のディレクトリの `eslint.mjs` にあるもの
+               - `.markdownlint-cli2.mjs` の `ignores` に足したもののうち、正本のディレクトリの `markdownlint-cli2.mjs` の `ignores` にあるもの
+               - `vitest.config.*` の coverage の `exclude` に足したもののうち、正本のディレクトリの `vitest.config.mjs` の `exclude` にあるもの
+               - `tsconfig*.json` の `compilerOptions` のうち、正本のディレクトリの `tsconfig.json` と同じ値のもの
                - `renovate.json` の設定や `packageRules` のうち、正本のディレクトリの `renovate.json` にあるもの
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
-            4. package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/@takudev-works/dev-config/dist/...` など）を、README の「dev-config コマンド」のとおり `dev-config <ツール>` に置き換える。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
+            4. package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/@takudev-works/dev-config/dist/...` など）を、README の書き方に置き換える。`dev-config` コマンドで包むツールは「dev-config コマンド」のとおり `dev-config <ツール>` にする。markdownlint は「markdownlint」のとおり repo のルートの `.markdownlint-cli2.mjs` で正本を読み、`--config` を渡さずに動かす。Prettier は「Prettier」のとおり package.json の `"prettier"` で正本を読み、`--config` を渡さずに動かす。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
             5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
             6. `bun run validate` が通ることを確かめる
             7. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、BASE_BRANCH に向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く
@@ -189,6 +192,6 @@ jobs:
             - repo の CLAUDE.md があれば従う
             - コミットメッセージと PR の題名は Conventional Commits の形で、日本語で書く
             - BASE_BRANCH に直接 push しない
-            - 設定を消すことと、手順 4 の `dev-config` コマンドへの置き換え以外の変更（新しい設定を足す、版を上げるなど）はしない
+            - 設定を消すことと、手順 4 の置き換え以外の変更（新しい設定を足す、版を上げるなど）はしない
           claude_args: |
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run validate),Bash(bun install),Bash(bun install *)"

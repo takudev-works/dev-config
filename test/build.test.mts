@@ -32,6 +32,14 @@ describe('build', { timeout: 60_000 }, () => {
     expect(existsSync(join(out, 'textlintrc.json'))).toBe(true);
   });
 
+  test('型の定義は、各 repo が import する正本にだけ置く', () => {
+    expect(readdirSync(out).filter((name) => name.endsWith('.d.mts'))).toEqual([
+      'eslint.d.mts',
+      'markdownlint-cli2.d.mts',
+      'vitest.config.d.mts'
+    ]);
+  });
+
   test('cli.mjs に実行の権限を付ける', () => {
     expect(statSync(join(out, 'cli.mjs')).mode & 0o111).not.toBe(0);
   });

@@ -2,7 +2,7 @@ rules:
   # $/ の書き方にしないのは、actionlint がまだその書き方を知らず、エラーにするため
   self-repository:
     disable: true
-  # claude.yml の issue_comment などを外すのは、呼び先の reusable-claude.yml が、書き手が OWNER・MEMBER・COLLABORATOR のときだけ動くよう if で絞っているため
+  # claude.yml の issue_comment などを危険と扱わないのは、呼び先の reusable-claude.yml が、書き手が OWNER・MEMBER・COLLABORATOR のときだけ動くよう if で絞っているため
   dangerous-triggers:
     ignore:
       - claude.yml
