@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { build } from './build.mjs';
+import { build } from './build.mts';
 
 const snapshot = (dir: string) =>
   new Map(
@@ -30,7 +30,7 @@ if (import.meta.main) {
   const stale = staleFiles(fresh, fileURLToPath(new URL('../dist', import.meta.url)));
   if (stale.length > 0) {
     console.error(`dist が src と合っていない: ${stale.join(', ')}`);
-    console.error('bun run build を実行して、dist をコミットする');
+    console.error('pnpm run build を実行して、dist をコミットする');
     process.exitCode = 1;
   }
 }

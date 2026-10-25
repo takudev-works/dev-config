@@ -22,7 +22,7 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
 | `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate はこの repo の main の `src/renovate.json` を直接読む。`dist/renovate.json` は、各 repo が入れた版の中身と比べるための写し |
 
-正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`bun run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。`src/renovate.json` だけは、Renovate が main のこの場所を直接読むので `src/` の直下に置く。ルートには、この repo 自身を検査するための設定を置く。
+正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`pnpm run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。`src/renovate.json` だけは、Renovate が main のこの場所を直接読むので `src/` の直下に置く。ルートには、この repo 自身を検査するための設定を置く。
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
@@ -60,7 +60,7 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 ### bun と pnpm
 
-各 repo の package manager を、bun から pnpm（runtime は Node）に移している。移し終えるまでは、どちらの repo も使える。`reusable-validate.yml` は、repo に `pnpm-lock.yaml` があれば pnpm と Node で、無ければ bun で検査する。
+各 repo の package manager を、bun から pnpm（runtime は Node）に移している。この repo は v8.2.0 で移した。移し終えるまでは、どちらの repo も使える。`reusable-validate.yml` は、repo に `pnpm-lock.yaml` があれば pnpm と Node で、無ければ bun で検査する。
 
 このあとの節の例は bun の repo の書き方。pnpm の repo では、次のように読み替える。
 
@@ -71,7 +71,9 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 | `lefthook.yml` | `bun <コマンド>`、`bun run <script>` | `pnpm exec <コマンド>`、`pnpm run <script>` |
 | scripts で TS や JS のファイルを動かす | `bun <ファイル>` | `node <ファイル>` |
 | `tsconfig.json` の `types` | `["bun"]` | `["node"]` |
+| `node` で直接動かす TS の import | 拡張子なしや `.mjs` でも動く | `.ts`・`.mts` を付け、`tsconfig.json` に `allowImportingTsExtensions` と `erasableSyntaxOnly` を足す |
 | README の「開発の準備」 | `bun run validate` | `pnpm run validate` |
+| `.prettierignore` | 要らない | `pnpm-lock.yaml` を書く。Prettier は YAML として読み、pnpm の書いた書式を違反とするため。Prettier の除外は repo の `.gitignore` と `.prettierignore` にしか書けないので、正本からは配れない |
 
 pnpm の repo では、ルートの `pnpm-workspace.yaml` に `nodeLinker: hoisted` を書く。pnpm の既定の置き方では、`node_modules/.bin` に入るのが直接の依存（`dev-config`）のコマンドだけになり、eslint・prettier・cspell などが repo から動かないため。
 
@@ -334,7 +336,7 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | mise の `op` | 上げない。Renovate が版を調べる先を持たないため。手で上げる |
 | 脆弱性の PR | ラベルを `security` にする |
 
-設定の検査（`renovate-config-validator`）は依存が大きいので、`bun run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
+設定の検査（`renovate-config-validator`）は依存が大きいので、`pnpm run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
 ### npm-package-json-lint
 
@@ -484,9 +486,10 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ### ビルド
 
-`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `bun run build` を実行し、`dist/` も一緒にコミットする。
+`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
 
-- `dist/` をコミットするのは、各 repo が git の依存として入れるときに、bun が依存の `prepare` を動かさない（信頼していない依存のスクリプトとして止める）ため。入れるときにビルドできない
+- `dist/` をコミットするのは、各 repo が git の依存として入れるときに、package manager が依存の `prepare` を動かすとは限らないため（bun は信頼していない依存のスクリプトとして止める）。入れるときにビルドできない
+- `scripts/` の TS は、Node が型を取り除いてそのまま動かす。そのため、`scripts/` の中の import には `.mts` を付ける（Node は `.mjs` から `.mts` を探さない）
 - `validate:build` が一時ディレクトリにビルドし直し、`dist/` と違えば落ちる。lefthook も、`src/`・`dist/`・`scripts/`・`tsconfig.build.json` を変えたコミットで同じ検査をする
 - 型の定義は、各 repo が import するもの（ESLint・markdownlint・Vitest の正本）にだけ置く。`src/cli/` のものは `dev-config` コマンドとして動かすだけなので置かない
 - `dist/` は Prettier の対象から外している（`tsc` の出力の書式は Prettier と違う）。ESLint・cspell などは、正本の除外に `dist` があるので対象にならない
@@ -494,9 +497,9 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 手元では次の順に実行する。
 
 ```sh
-mise install      # mise.toml の版の bun、lefthook、actionlint、zizmor、shellcheck を入れる
-mise run setup    # 依存と git hook を入れる
-bun run validate  # CI と同じ検査
+mise install       # mise.toml の版の Node、pnpm、lefthook、actionlint、zizmor、shellcheck を入れる
+mise run setup     # 依存と git hook を入れる
+pnpm run validate  # CI と同じ検査
 ```
 
 前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。

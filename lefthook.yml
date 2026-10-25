@@ -3,42 +3,42 @@ glob_matcher: doublestar
 commit-msg:
   commands:
     commitlint:
-      run: bun dist/cli.mjs commitlint --edit {1}
+      run: node dist/cli.mjs commitlint --edit {1}
 
 pre-commit:
   parallel: true
   commands:
     markdownlint:
       glob: '**/*.md'
-      run: bun markdownlint-cli2 {staged_files}
+      run: pnpm exec markdownlint-cli2 {staged_files}
     textlint:
       glob: '**/*.md'
-      run: bun dist/cli.mjs textlint {staged_files}
+      run: node dist/cli.mjs textlint {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,mts,cts,tsx}'
-      run: bun eslint --no-warn-ignored {staged_files}
+      run: pnpm exec eslint --no-warn-ignored {staged_files}
     prettier:
-      run: bun prettier --check --ignore-unknown {staged_files}
+      run: pnpm exec prettier --check --ignore-unknown {staged_files}
     cspell:
-      run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
+      run: pnpm exec cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
-      run: bun dist/cli.mjs secretlint {staged_files}
+      run: node dist/cli.mjs secretlint {staged_files}
     package-json:
       glob: '**/package.json'
-      run: bun run validate:package-json
+      run: pnpm run validate:package-json
     shellcheck:
       glob: '**/*.{sh,bash}'
       run: shellcheck {staged_files}
     actionlint:
       glob: '.github/workflows/*.{yml,yaml}'
-      run: bun dist/cli.mjs actionlint {staged_files}
+      run: node dist/cli.mjs actionlint {staged_files}
     zizmor:
       glob: '.github/workflows/*.{yml,yaml}'
-      run: bun dist/cli.mjs zizmor {staged_files}
+      run: node dist/cli.mjs zizmor {staged_files}
     build:
       glob:
         - 'src/**'
         - 'dist/**'
         - 'scripts/**'
         - 'tsconfig.build.json'
-      run: bun run validate:build
+      run: pnpm run validate:build

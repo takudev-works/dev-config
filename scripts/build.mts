@@ -60,7 +60,7 @@ export const build = (outDir: string, compile: (outDir: string) => number | null
   chmodSync(join(outDir, 'cli.mjs'), 0o755);
 };
 
-// 測らないのは、bun run build と validate:build が子プロセスとして動かし、子プロセスは測れないため
+// 測らないのは、pnpm run build と validate:build が子プロセスとして動かし、子プロセスは測れないため
 /* v8 ignore start */
 if (import.meta.main) {
   build(resolve(root, process.argv[2] ?? 'dist'));

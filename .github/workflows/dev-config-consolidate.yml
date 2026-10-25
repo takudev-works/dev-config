@@ -78,7 +78,7 @@ jobs:
         with: # zizmor: ignore[artipacked]
           fetch-depth: 0
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-      - run: bun install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を clone できないため。
       # repositories で絞らないのは、組織のすべての repo を読むのが目的のため
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -119,7 +119,7 @@ jobs:
                - `lefthook.yml` や package.json の scripts のうち、README の例に無いもの
             4. どの repo にも当てはまる理由があるものだけを `src/` の正本に足す。特定の repo の事情（その repo のディレクトリ名、使っているフレームワークだけの設定など）は寄せない。判断に迷うものは足さず、PR の本文に「確かめてほしいこと」として書く
             5. 正本に足したものに README の説明が要れば、README も直す
-            6. `bun run build` で `dist/` を作り直し、`bun run validate` が通ることを確かめる。`dist/` もコミットに含める
+            6. `pnpm run build` で `dist/` を作り直し、`pnpm run validate` が通ることを確かめる。`dist/` もコミットに含める
             7. 足したものがあれば、`chore/dev-config-consolidate-<日付>` のブランチを作ってコミットし、main に向けて PR を 1 本出す。題名は「feat: 各 repo に重なる設定を dev-config に寄せる」。本文には、足したものごとに、どの repo のどのファイルに書かれていたかを書く。各 repo の重複は、新しい版が各 repo に入ったあとに、このワークフローの remove-duplicates が消す
             8. 足すものがなければ、PR を作らずに終わる
 
@@ -130,7 +130,7 @@ jobs:
             - package.json の版は上げない。版は人が上げる
           claude_args: |
             --add-dir ${{ runner.temp }}/repos
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run build),Bash(bun run validate),Bash(bun install),Bash(bun install *)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(pnpm run build),Bash(pnpm run validate),Bash(pnpm install),Bash(pnpm install *)"
 
   remove-duplicates:
     needs: list-repos
@@ -161,7 +161,14 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-      - run: bun install --frozen-lockfile
+      - name: lock ファイルから package manager を決める
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pm=pnpm; else pm=bun; fi
+          echo "name=$pm" >> "$GITHUB_OUTPUT"
+      - run: '"$PM" install --frozen-lockfile'
+        env:
+          PM: ${{ steps.pm.outputs.name }}
       - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
         with:
           claude_code_oauth_token: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
@@ -184,7 +191,7 @@ jobs:
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
             4. package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/@takudev-works/dev-config/dist/...` など）を、README の書き方に置き換える。`dev-config` コマンドで包むツールは「dev-config コマンド」のとおり `dev-config <ツール>` にする。markdownlint は「markdownlint」のとおり repo のルートの `.markdownlint-cli2.mjs` で正本を読み、`--config` を渡さずに動かす。Prettier は「Prettier」のとおり package.json の `"prettier"` で正本を読み、`--config` を渡さずに動かす。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
             5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
-            6. `bun run validate` が通ることを確かめる
+            6. `${{ steps.pm.outputs.name }} run validate` が通ることを確かめる
             7. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、BASE_BRANCH に向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く
             8. 消すものがなければ、PR を作らずに終わる
 
@@ -194,4 +201,4 @@ jobs:
             - BASE_BRANCH に直接 push しない
             - 設定を消すことと、手順 4 の置き換え以外の変更（新しい設定を足す、版を上げるなど）はしない
           claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(bun run validate),Bash(bun install),Bash(bun install *)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(${{ steps.pm.outputs.name }} run validate),Bash(${{ steps.pm.outputs.name }} install),Bash(${{ steps.pm.outputs.name }} install *)"
