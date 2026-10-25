@@ -307,9 +307,9 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | PR | ラベル `dependencies`、担当は `t-i-0414`（レビュアーは各 repo の CODEOWNERS で付く）、コミットメッセージの頭に `chore:`、同時に開く PR は 5 本まで |
 | 上げ方 | 公開から 7 日たった版だけを上げる。範囲指定（`^` など）の下限も上げる |
 | まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる |
-| major | Dependency Dashboard で承認してから PR を出す |
+| major | 承認を待たずに、依存ごとに 1 本ずつ PR を出す。同じ monorepo の package（`vitest` と `@vitest/coverage-v8` など）は、`config:recommended` の決まりで 1 本にまとまる |
 | TypeScript | 6.1 未満に止める。typescript-eslint の peerDependencies が `<6.1.0` で、それより新しい TS では lint が落ちるため |
-| `@takudev-works/dev-config` | 自分たちで出すので、7 日待たず、major も承認を待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
+| `@takudev-works/dev-config` | 自分たちで出すので、7 日待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
 | mise の `op` | 上げない。Renovate が版を調べる先を持たないため。手で上げる |
 | 脆弱性の PR | ラベルを `security` にする |
 
