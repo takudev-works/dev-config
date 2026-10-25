@@ -1,6 +1,6 @@
 {
   "name": "@takudev-works/dev-config",
-  "version": "8.1.0",
+  "version": "8.2.0",
   "private": true,
   "description": "takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本",
   "license": "MIT",
@@ -11,19 +11,19 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun scripts/build.mts",
+    "build": "node scripts/build.mts",
     "validate": "run-p validate:*",
-    "validate:build": "bun scripts/check-build.mts",
+    "validate:build": "node scripts/check-build.mts",
     "validate:format": "prettier --check .",
     "validate:lint": "eslint .",
     "validate:markdown": "markdownlint-cli2 \"**/*.md\"",
-    "validate:package-json": "bun dist/cli.mjs npm-package-json-lint \"**/package.json\"",
-    "validate:secrets": "bun dist/cli.mjs secretlint \"**/*\"",
+    "validate:package-json": "node dist/cli.mjs npm-package-json-lint \"**/package.json\"",
+    "validate:secrets": "node dist/cli.mjs secretlint \"**/*\"",
     "validate:spell": "cspell --no-progress \"**\"",
     "validate:test": "vitest run --coverage",
-    "validate:text": "bun dist/cli.mjs textlint \"**/*.md\"",
+    "validate:text": "node dist/cli.mjs textlint \"**/*.md\"",
     "validate:type": "tsc",
-    "validate:workflows": "bun dist/cli.mjs actionlint && bun dist/cli.mjs zizmor .github/workflows"
+    "validate:workflows": "node dist/cli.mjs actionlint && node dist/cli.mjs zizmor .github/workflows"
   },
   "dependencies": {
     "@commitlint/cli": "^21.2.3",
@@ -49,5 +49,6 @@
   "devDependencies": {
     "@types/node": "^26.6.5"
   },
+  "packageManager": "pnpm@12.13.0",
   "prettier": "./src/prettier/prettierrc.json"
 }
