@@ -27,6 +27,7 @@
     "**/.vercel/**",
     "**/.git/**",
     "**/bun.lock",
+    "**/pnpm-lock.yaml",
     "**/uv.lock",
     "**/package-lock.json",
     "**/.terraform.lock.hcl",
