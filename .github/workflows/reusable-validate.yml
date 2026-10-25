@@ -19,19 +19,28 @@ jobs:
           fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           persist-credentials: false
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-      - run: bun install --frozen-lockfile
+      # package.json の packageManager で決めないのは、書いていない bun の repo があるため
+      - name: lock ファイルから package manager を決める
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pm=pnpm runtime=node; else pm=bun runtime=bun; fi
+          printf 'name=%s\nruntime=%s\n' "$pm" "$runtime" >> "$GITHUB_OUTPUT"
+      - run: '"$PM" install --frozen-lockfile'
+        env:
+          PM: ${{ steps.pm.outputs.name }}
       # 別の job にしないのは、check が増えると組織の ruleset に足す必要があり、新しい版に上がる前の repo の PR が止まるため
       - name: PR のタイトルとコミットメッセージを commitlint で検査する
         if: github.event_name == 'pull_request'
         env:
+          RUNTIME: ${{ steps.pm.outputs.runtime }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           cli=node_modules/@takudev-works/dev-config/dist/cli.mjs
           [ -f "$cli" ] || cli=dist/cli.mjs
-          printf '%s\n' "$PR_TITLE" | bun "$cli" commitlint
-          bun "$cli" commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+          printf '%s\n' "$PR_TITLE" | "$RUNTIME" "$cli" commitlint
+          "$RUNTIME" "$cli" commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
       - name: ワークフローとシェルスクリプトを actionlint・zizmor・shellcheck で検査する
         env:
           # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.*)$
@@ -40,6 +49,7 @@ jobs:
           ZIZMOR_VERSION: 1.31.1
           # renovate: datasource=github-releases depName=koalaman/shellcheck extractVersion=^v(?<version>.*)$
           SHELLCHECK_VERSION: 0.11.0
+          RUNTIME: ${{ steps.pm.outputs.runtime }}
         run: |
           # env の版を使わないのは、repo の mise.toml にあれば、手元の lefthook と同じ版で検査するため
           tool() {
@@ -52,6 +62,8 @@ jobs:
           cli=node_modules/@takudev-works/dev-config/dist/cli.mjs
           [ -f "$cli" ] || cli=dist/cli.mjs
           # runner の shellcheck を使わせないのは、版が runner の image で変わり、repo によって結果が変わるため
-          mise exec "$shellcheck_tool" "$actionlint_tool" -- bun "$cli" actionlint
-          mise exec "$zizmor_tool" -- bun "$cli" zizmor .github/workflows
-      - run: bun run validate
+          mise exec "$shellcheck_tool" "$actionlint_tool" -- "$RUNTIME" "$cli" actionlint
+          mise exec "$zizmor_tool" -- "$RUNTIME" "$cli" zizmor .github/workflows
+      - run: '"$PM" run validate'
+        env:
+          PM: ${{ steps.pm.outputs.name }}

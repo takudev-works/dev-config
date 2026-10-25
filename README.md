@@ -56,7 +56,28 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 }
 ```
 
-ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。bun が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の `bun.lock` で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。ただし `vitest` と `@vitest/coverage-v8` は固定する。`@vitest/coverage-v8` の peerDependencies は vitest の完全に同じ版を求め、範囲で書くと、lock の更新で 2 つの版がずれうるため。
+ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。package manager が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない（pnpm の repo は「bun と pnpm」を参照）。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の lock ファイル（`bun.lock` か `pnpm-lock.yaml`）で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。ただし `vitest` と `@vitest/coverage-v8` は固定する。`@vitest/coverage-v8` の peerDependencies は vitest の完全に同じ版を求め、範囲で書くと、lock の更新で 2 つの版がずれうるため。
+
+### bun と pnpm
+
+各 repo の package manager を、bun から pnpm（runtime は Node）に移している。移し終えるまでは、どちらの repo も使える。`reusable-validate.yml` は、repo に `pnpm-lock.yaml` があれば pnpm と Node で、無ければ bun で検査する。
+
+このあとの節の例は bun の repo の書き方。pnpm の repo では、次のように読み替える。
+
+| 場所 | bun の repo | pnpm の repo |
+| --- | --- | --- |
+| `mise.toml` の `[tools]` | `bun` | `node` と `pnpm` |
+| `mise.toml` の `[tasks.setup]` | `bun install --frozen-lockfile` | `pnpm install --frozen-lockfile` |
+| `lefthook.yml` | `bun <コマンド>`、`bun run <script>` | `pnpm exec <コマンド>`、`pnpm run <script>` |
+| scripts で TS や JS のファイルを動かす | `bun <ファイル>` | `node <ファイル>` |
+| `tsconfig.json` の `types` | `["bun"]` | `["node"]` |
+| README の「開発の準備」 | `bun run validate` | `pnpm run validate` |
+
+pnpm の repo では、ルートの `pnpm-workspace.yaml` に `nodeLinker: hoisted` を書く。pnpm の既定の置き方では、`node_modules/.bin` に入るのが直接の依存（`dev-config`）のコマンドだけになり、eslint・prettier・cspell などが repo から動かないため。
+
+```yaml
+nodeLinker: hoisted
+```
 
 ### dev-config コマンド
 
@@ -355,7 +376,7 @@ bun run validate  # CI と同じ検査
 
 | ワークフロー | 中身 |
 | --- | --- |
-| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun などを入れ、`bun install --frozen-lockfile` と `bun run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun（pnpm の repo では Node と pnpm）などを入れ、`install --frozen-lockfile` と `run validate` を回す。bun と pnpm のどちらで回すかは、repo に `pnpm-lock.yaml` があるかで決める（「bun と pnpm」を参照）。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
