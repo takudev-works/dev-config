@@ -66,9 +66,16 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 
 ルートの `pnpm-workspace.yaml` に `nodeLinker: hoisted` を書く。pnpm の既定の置き方では、`node_modules/.bin` に入るのが直接の依存（`dev-config`）のコマンドだけになり、eslint・prettier・cspell などが repo から動かないため。
 
+同じファイルに `minimumReleaseAge: 10080` も書く。公開から 7 日（10080 分）たっていない版を、pnpm が入れないようにするため。乗っ取られた版は、公開から数日で見つかって取り下げられることが多い。Renovate の preset も 7 日待つ（「Renovate」を参照）。ただし、手元の `pnpm add`・`pnpm update` と間接の依存は、pnpm の設定でしか止まらない。pnpm の既定は 1 日。`dev-config` は GitHub から入れるので、この設定で止まらない。
+
+lock ファイルに 7 日たっていない版が残っていると、`pnpm install --frozen-lockfile` が `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` で失敗する。そのときは `pnpm clean --lockfile` の後に `pnpm install` で lock を作り直す。直接の依存の範囲を満たす版がどれも 7 日たっていなければ、作り直しても `ERR_PNPM_NO_MATURE_MATCHING_VERSION` で失敗するので、7 日たつのを待つ。
+
 ```yaml
 nodeLinker: hoisted
+minimumReleaseAge: 10080
 ```
+
+`pnpm-workspace.yaml` の設定は正本から配れないので、どちらも各 repo に書く。
 
 ほかに次のことが要る。
 
