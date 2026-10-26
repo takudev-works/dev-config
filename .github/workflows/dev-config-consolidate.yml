@@ -161,14 +161,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
-      - name: lock ファイルから package manager を決める
-        id: pm
-        run: |
-          if [ -f pnpm-lock.yaml ]; then pm=pnpm; else pm=bun; fi
-          echo "name=$pm" >> "$GITHUB_OUTPUT"
-      - run: '"$PM" install --frozen-lockfile'
-        env:
-          PM: ${{ steps.pm.outputs.name }}
+      - run: pnpm install --frozen-lockfile
       - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
         with:
           claude_code_oauth_token: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
@@ -191,7 +184,7 @@ jobs:
                - `.github/workflows/` の手順のうち、dev-config の再利用できるワークフロー（`reusable-*.yml`）で置き換えられるもの
             4. package.json の scripts と `lefthook.yml` で正本のパスを直接渡しているコマンド（`--config node_modules/@takudev-works/dev-config/dist/...` など）を、README の書き方に置き換える。`dev-config` コマンドで包むツールは「dev-config コマンド」のとおり `dev-config <ツール>` にする。markdownlint は「markdownlint」のとおり repo のルートの `.markdownlint-cli2.mjs` で正本を読み、`--config` を渡さずに動かす。Prettier は「Prettier」のとおり package.json の `"prettier"` で正本を読み、`--config` を渡さずに動かす。`.secretlintignore` と `.textlintignore` からは、正本のディレクトリの `secretlintignore`・`textlintignore` と同じ行を消す。行が残らなければファイルを消す
             5. 重なっているものだけを消す。repo だけの事情で書いているもの、正本と値が違うものは残す。判断に迷うものは消さず、PR の本文に「確かめてほしいこと」として書く
-            6. `${{ steps.pm.outputs.name }} run validate` が通ることを確かめる
+            6. `pnpm run validate` が通ることを確かめる
             7. 消したものがあれば、`chore/dev-config-duplicates-<日付>` のブランチを作ってコミットし、BASE_BRANCH に向けて PR を 1 本出す。題名は「chore: dev-config と重なる設定を消す」。本文には、消したものごとに、正本のどのファイルのどこと重なっていたかを書く
             8. 消すものがなければ、PR を作らずに終わる
 
@@ -201,4 +194,4 @@ jobs:
             - BASE_BRANCH に直接 push しない
             - 設定を消すことと、手順 4 の置き換え以外の変更（新しい設定を足す、版を上げるなど）はしない
           claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(${{ steps.pm.outputs.name }} run validate),Bash(${{ steps.pm.outputs.name }} install),Bash(${{ steps.pm.outputs.name }} install *)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git *),Bash(gh pr *),Bash(pnpm run validate),Bash(pnpm install),Bash(pnpm install *)"
