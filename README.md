@@ -86,7 +86,8 @@ minimumReleaseAge: 10080
 | `tsconfig.json` の `types` | `["node"]` | |
 | `node` で直接動かす TS の相対 import | `.ts`・`.mts` を付け、`tsconfig.json` に `allowImportingTsExtensions` と `erasableSyntaxOnly` を足す | Node は型を取り除いて TS を動かすが、拡張子の無い import や `.mjs` から `.mts` を探さないため |
 | package.json の `type` | `"module"` | 無いと、Node が `.ts` を ESM として読むたびに警告を stderr に出すため |
-| Vercel の project の環境変数 | `ENABLE_EXPERIMENTAL_COREPACK=1` | Vercel が自分で pnpm の版を切り替える仕組みは、pnpm 12 で失敗するため。corepack に `packageManager` の版を入れさせる |
+| Vercel の project の環境変数 | `ENABLE_EXPERIMENTAL_COREPACK=1` | Vercel が自分で pnpm の版を切り替える仕組みは、pnpm 12 で失敗するため。corepack に `packageManager` の版を入れさせる。corepack は Node 25 から Node に入っていないので、Vercel の Node を 25 以上に上げるときは、別の手段が要る |
+| テストで子プロセスとして動かす Node | `spawnSync('node', …)` ではなく `spawnSync(process.execPath, …)` | テストを動かしている Node と同じものを使うため |
 
 ### dev-config コマンド
 
