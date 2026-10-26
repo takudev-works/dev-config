@@ -109,6 +109,7 @@ package.json の scripts には、次のように書く。
 {
   "scripts": {
     "validate": "run-p validate:*",
+    "validate:format": "prettier --check .",
     "validate:markdown": "markdownlint-cli2 \"**/*.md\"",
     "validate:package-json": "dev-config npm-package-json-lint \"**/package.json\"",
     "validate:secrets": "dev-config secretlint \"**/*\"",
