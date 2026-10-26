@@ -37,6 +37,8 @@ v8 で、package の名前を `dev-config` から `@takudev-works/dev-config` �
 - その repo の package.json（モノレポなら中の package も）の `name` を `@takudev-works/` で始める
 - `reusable-validate.yml` の呼び出し先を v8 のタグの SHA にする
 
+v9 で、bun の repo への対応をやめた。v8.2 から、各 repo の package manager を bun から pnpm（runtime は Node）に移し、すべての repo が移ったため。`reusable-validate.yml` は pnpm と Node だけで検査する。まだ bun の repo は、「pnpm と Node」の書き方に移してから上げる。正本の cspell の単語から `bunfig` と `bunx` を外したので、文書にこれらの単語が残っている repo は、repo の `cspell.json` に足す。
+
 ## 使い方
 
 この repo を devDependencies に入れる。
@@ -56,30 +58,28 @@ gh api repos/takudev-works/dev-config/tags --jq '.[0] | "\(.name) \(.commit.sha)
 }
 ```
 
-ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。package manager が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない（pnpm の repo は「bun と pnpm」を参照）。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の lock ファイル（`bun.lock` か `pnpm-lock.yaml`）で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。ただし `vitest` と `@vitest/coverage-v8` は固定する。`@vitest/coverage-v8` の peerDependencies は vitest の完全に同じ版を求め、範囲で書くと、lock の更新で 2 つの版がずれうるため。
+ツール本体は、この repo の `dependencies` に入れてある（どれが入っているかは package.json を見る）。pnpm が `node_modules` の直下に置き、コマンドも `node_modules/.bin` に入るので、各 repo には書かない（そのための置き方は「pnpm と Node」を参照）。ツールの版の範囲はこの repo の `dependencies` で決め、上げるのもこの repo で行う。正確な版は各 repo の `pnpm-lock.yaml` で決まり、Renovate の lock ファイルの更新でそろえて新しくなる。範囲（`^`）で書き、版を固定しないのは、ツールの不具合やセキュリティの直しを、この repo の版を出さなくても各 repo の lock の更新で入れられるようにするため。ただし `vitest` と `@vitest/coverage-v8` は固定する。`@vitest/coverage-v8` の peerDependencies は vitest の完全に同じ版を求め、範囲で書くと、lock の更新で 2 つの版がずれうるため。
 
-### bun と pnpm
+### pnpm と Node
 
-各 repo の package manager を、bun から pnpm（runtime は Node）に移している。この repo は v8.2.0 で移した。移し終えるまでは、どちらの repo も使える。`reusable-validate.yml` は、repo に `pnpm-lock.yaml` があれば pnpm と Node で、無ければ bun で検査する。
+各 repo の package manager は pnpm、runtime は Node にする。Node と pnpm の版は repo の `mise.toml` に書き（「lefthook」を参照）、package.json の `packageManager` にも `pnpm@<版>` を書く。
 
-このあとの節の例は bun の repo の書き方。pnpm の repo では、次のように読み替える。
-
-| 場所 | bun の repo | pnpm の repo |
-| --- | --- | --- |
-| `mise.toml` の `[tools]` | `bun` | `node` と `pnpm` |
-| `mise.toml` の `[tasks.setup]` | `bun install --frozen-lockfile` | `pnpm install --frozen-lockfile` |
-| `lefthook.yml` | `bun <コマンド>`、`bun run <script>` | `pnpm exec <コマンド>`、`pnpm run <script>` |
-| scripts で TS や JS のファイルを動かす | `bun <ファイル>` | `node <ファイル>` |
-| `tsconfig.json` の `types` | `["bun"]` | `["node"]` |
-| `node` で直接動かす TS の import | 拡張子なしや `.mjs` でも動く | `.ts`・`.mts` を付け、`tsconfig.json` に `allowImportingTsExtensions` と `erasableSyntaxOnly` を足す |
-| README の「開発の準備」 | `bun run validate` | `pnpm run validate` |
-| `.prettierignore` | 要らない | `pnpm-lock.yaml` を書く。Prettier は YAML として読み、pnpm の書いた書式を違反とするため。Prettier の除外は repo の `.gitignore` と `.prettierignore` にしか書けないので、正本からは配れない |
-
-pnpm の repo では、ルートの `pnpm-workspace.yaml` に `nodeLinker: hoisted` を書く。pnpm の既定の置き方では、`node_modules/.bin` に入るのが直接の依存（`dev-config`）のコマンドだけになり、eslint・prettier・cspell などが repo から動かないため。
+ルートの `pnpm-workspace.yaml` に `nodeLinker: hoisted` を書く。pnpm の既定の置き方では、`node_modules/.bin` に入るのが直接の依存（`dev-config`）のコマンドだけになり、eslint・prettier・cspell などが repo から動かないため。
 
 ```yaml
 nodeLinker: hoisted
 ```
+
+ほかに次のことが要る。
+
+| 場所 | 書くこと | 理由 |
+| --- | --- | --- |
+| `pnpm-workspace.yaml` の `allowBuilds` | install script を動かす依存（`true`）と止める依存（`false`） | pnpm は、install script を許すかを決めていない依存があると、install を失敗にする。`pnpm approve-builds <許す依存> '!<止める依存>'` で書ける |
+| `.prettierignore` | `pnpm-lock.yaml` | Prettier は YAML として読み、pnpm の書いた書式を違反とするため。Prettier の除外は repo の `.gitignore` と `.prettierignore` にしか書けないので、正本からは配れない |
+| `tsconfig.json` の `types` | `["node"]` | |
+| `node` で直接動かす TS の相対 import | `.ts`・`.mts` を付け、`tsconfig.json` に `allowImportingTsExtensions` と `erasableSyntaxOnly` を足す | Node は型を取り除いて TS を動かすが、拡張子の無い import や `.mjs` から `.mts` を探さないため |
+| package.json の `type` | `"module"` | 無いと、Node が `.ts` を ESM として読むたびに警告を stderr に出すため |
+| Vercel の project の環境変数 | `ENABLE_EXPERIMENTAL_COREPACK=1` | Vercel が自分で pnpm の版を切り替える仕組みは、pnpm 12 で失敗するため。corepack に `packageManager` の版を入れさせる |
 
 ### dev-config コマンド
 
@@ -128,45 +128,46 @@ glob_matcher: doublestar
 commit-msg:
   commands:
     commitlint:
-      run: bun dev-config commitlint --edit {1}
+      run: pnpm exec dev-config commitlint --edit {1}
 
 pre-commit:
   parallel: true
   commands:
     markdownlint:
       glob: '**/*.md'
-      run: bun markdownlint-cli2 {staged_files}
+      run: pnpm exec markdownlint-cli2 {staged_files}
     textlint:
       glob: '**/*.md'
-      run: bun dev-config textlint {staged_files}
+      run: pnpm exec dev-config textlint {staged_files}
     eslint:
       glob: '**/*.{js,mjs,cjs,ts,mts,cts,tsx}'
-      run: bun eslint --no-warn-ignored {staged_files}
+      run: pnpm exec eslint --no-warn-ignored {staged_files}
     prettier:
-      run: bun prettier --check --ignore-unknown {staged_files}
+      run: pnpm exec prettier --check --ignore-unknown {staged_files}
     cspell:
-      run: bun cspell --no-progress --no-summary --no-must-find-files {staged_files}
+      run: pnpm exec cspell --no-progress --no-summary --no-must-find-files {staged_files}
     secretlint:
-      run: bun dev-config secretlint {staged_files}
+      run: pnpm exec dev-config secretlint {staged_files}
     package-json:
       glob: '**/package.json'
-      run: bun run validate:package-json
+      run: pnpm run validate:package-json
     shellcheck:
       glob: '**/*.{sh,bash}'
       run: shellcheck {staged_files}
     actionlint:
       glob: '.github/workflows/*.{yml,yaml}'
-      run: bun dev-config actionlint {staged_files}
+      run: pnpm exec dev-config actionlint {staged_files}
     zizmor:
       glob: '.github/workflows/*.{yml,yaml}'
-      run: bun dev-config zizmor {staged_files}
+      run: pnpm exec dev-config zizmor {staged_files}
 ```
 
-shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に、bun・lefthook と一緒に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。`[tasks.setup]` は、「README」の「開発の準備」で使う。
+shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に、Node・pnpm・lefthook と一緒に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。`[tasks.setup]` は、「README」の「開発の準備」で使う。
 
 ```toml
 [tools]
-bun = "<版>"
+node = "<版>"
+pnpm = "<版>"
 lefthook = "<版>"
 actionlint = "<版>"
 zizmor = "<版>"
@@ -174,7 +175,7 @@ shellcheck = "<版>"
 
 [tasks.setup]
 description = "依存と git hook を入れる"
-run = ["bun install --frozen-lockfile", "lefthook install"]
+run = ["pnpm install --frozen-lockfile", "lefthook install"]
 ```
 
 ワークフローを CI で検査するだけでなく lefthook でも止めるのは、CI まで待たずに直せて、CI を回し直さずに済むため。エディタの拡張は、actionlint には信頼できるものが無く、zizmor の公式の拡張は repo の外（`node_modules/@takudev-works/dev-config/dist`）の設定を見つけられないので使わない。
@@ -195,7 +196,7 @@ export default { ...base, ignores: [...base.ignores, 'python/reference/**'] };
 
 足すものがなければ、`export { default } from '@takudev-works/dev-config/dist/markdownlint-cli2.mjs';` だけでよい。
 
-markdownlint-cli2 も Cursor・VS Code の拡張（vscode-markdownlint）も、このファイルを repo のルートから自分で見つける。そのため、scripts と lefthook では `--config` を渡さずに動かす（`markdownlint-cli2 "**/*.md"`、`bun markdownlint-cli2 {staged_files}`）。`.vscode/settings.json` の `markdownlint.configFile` も要らない。
+markdownlint-cli2 も Cursor・VS Code の拡張（vscode-markdownlint）も、このファイルを repo のルートから自分で見つける。そのため、scripts と lefthook では `--config` を渡さずに動かす（`markdownlint-cli2 "**/*.md"`、`pnpm exec markdownlint-cli2 {staged_files}`）。`.vscode/settings.json` の `markdownlint.configFile` も要らない。
 
 - JSONC の設定（`.markdownlint-cli2.jsonc`）にしないのは、JSONC では正本の `ignores` を読み込んで足せず、repo に除外の一覧を丸写しすることになるため
 - 拡張は、ワークスペースを信頼しているときだけ JS の設定を読む。`.markdownlint-cli2.mjs` を直したら、Cursor・VS Code を再起動する（拡張が JS を読み込んだまま持つため）
@@ -261,7 +262,7 @@ repo の `tsconfig.json` から正本を `extends` し、`include` や `lib`、`
 ```json
 {
   "extends": "@takudev-works/dev-config/dist/tsconfig.json",
-  "compilerOptions": { "types": ["bun"] },
+  "compilerOptions": { "types": ["node"] },
   "include": ["scripts/**/*.ts"]
 }
 ```
@@ -364,9 +365,9 @@ repo の README に「開発の準備」の節を置き、手元で最初に実�
 手元では次の順に実行する。
 
 ```sh
-mise install      # mise.toml の版の bun、lefthook、actionlint、zizmor、shellcheck を入れる
-mise run setup    # 依存と git hook を入れる
-bun run validate  # CI と同じ検査
+mise install       # mise.toml の版の Node、pnpm、lefthook、actionlint、zizmor、shellcheck を入れる
+mise run setup     # 依存と git hook を入れる
+pnpm run validate  # CI と同じ検査
 ```
 
 前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
@@ -378,7 +379,7 @@ bun run validate  # CI と同じ検査
 
 | ワークフロー | 中身 |
 | --- | --- |
-| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の bun（pnpm の repo では Node と pnpm）などを入れ、`install --frozen-lockfile` と `run validate` を回す。bun と pnpm のどちらで回すかは、repo に `pnpm-lock.yaml` があるかで決める（「bun と pnpm」を参照）。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
+| `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の Node と pnpm などを入れ、`pnpm install --frozen-lockfile` と `pnpm run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 
 ```yaml
@@ -488,7 +489,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 `src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
 
-- `dist/` をコミットするのは、各 repo が git の依存として入れるときに、package manager が依存の `prepare` を動かすとは限らないため（bun は信頼していない依存のスクリプトとして止める）。入れるときにビルドできない
+- `dist/` をコミットするのは、各 repo が git の依存として入れるときに、package manager が依存の `prepare` を動かすとは限らないため（pnpm は、`allowBuilds` で許していない依存の install script を動かさない）。入れるときにビルドできない
 - `scripts/` の TS は、Node が型を取り除いてそのまま動かす。そのため、`scripts/` の中の import には `.mts` を付ける（Node は `.mjs` から `.mts` を探さない）
 - `validate:build` が一時ディレクトリにビルドし直し、`dist/` と違えば落ちる。lefthook も、`src/`・`dist/`・`scripts/`・`tsconfig.build.json` を変えたコミットで同じ検査をする
 - 型の定義は、各 repo が import するもの（ESLint・markdownlint・Vitest の正本）にだけ置く。`src/cli/` のものは `dev-config` コマンドとして動かすだけなので置かない
