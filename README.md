@@ -2,7 +2,7 @@
 
 takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本。各 repo はこの repo を git の依存として入れ、`dev-config` コマンドか設定ファイルのパスで各ツールに正本を渡す。
 
-各 repo が読むのは `dist/` のファイル。Renovate の preset（`dist/renovate.json`）だけは、各 repo に入れた版ではなく、この repo の main のものを読む（「Renovate」を参照）。
+各 repo が読むのは、入れた版の `dist/` のファイル。
 
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
@@ -38,6 +38,8 @@ v8 で、package の名前を `dev-config` から `@takudev-works/dev-config` �
 - 正本を読むパスの `dev-config/dist/` と `node_modules/dev-config/dist/` を、`@takudev-works/dev-config/dist/` と `node_modules/@takudev-works/dev-config/dist/` にする
 - その repo の package.json（モノレポなら中の package も）の `name` を `@takudev-works/` で始める
 - `reusable-validate.yml` の呼び出し先を v8 のタグの SHA にする
+
+v9.1 で、Renovate の preset もほかの正本と同じく、入れた版の `dist/` から読む形にした（「Renovate」を参照）。`src/renovate.json` は v9.1 から無い。`github>takudev-works/dev-config//src/renovate` を読んでいる repo は、`renovate.json` の `extends` を `github>takudev-works/dev-config//dist/renovate#<タグ>` に直す。`<タグ>` は package.json の dev-config と同じタグにする。
 
 v9 で、bun の repo への対応をやめた。v8.2 から、各 repo の package manager を bun から pnpm（runtime は Node）に移し、すべての repo が移ったため。`reusable-validate.yml` は pnpm と Node だけで検査する。まだ bun の repo は、「pnpm と Node」の書き方に移してから上げる。正本の cspell の単語から `bunfig` と `bunx` を外したので、文書にこれらの単語が残っている repo は、repo の `cspell.json` に足す。
 
@@ -330,11 +332,13 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>takudev-works/dev-config//dist/renovate"]
+  "extends": ["github>takudev-works/dev-config//dist/renovate#<タグ>"]
 }
 ```
 
-`github>takudev-works/dev-config//dist/renovate` は、この repo の main の `dist/renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。Renovate は GitHub の上で repo を読み、`pnpm install` をしないので、各 repo に入れた dev-config の `node_modules` の中のものは読めない。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
+`github>takudev-works/dev-config//dist/renovate#<タグ>` は、この repo のそのタグの `dist/renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。Renovate は GitHub の上で repo を読み、`pnpm install` をしないので、`node_modules` の中のものは読めない。そのため、パスではなくタグで、ほかの正本と同じ版を読ませる。`<タグ>` は package.json の dev-config と同じタグにする。
+
+この repo の `renovate.json` だけは、タグを付けずに main の `dist/renovate.json` を読む。この repo 自身は、ほかのツールでも手元の `dist/` の正本で検査するため（「この repo の開発の準備」を参照）。
 
 | 設定 | 中身 |
 | --- | --- |
@@ -344,7 +348,7 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる。mise の Terraform は Terraform の PR に入れる。`required_version` と別の PR になると、`required_version` を上げた PR の CI が古い Terraform で動いて落ちるため |
 | major | 承認を待たずに、依存ごとに 1 本ずつ PR を出す。同じ monorepo の package（`vitest` と `@vitest/coverage-v8` など）は、`config:recommended` の決まりで 1 本にまとまる |
 | TypeScript | 6.1 未満に止める。typescript-eslint の peerDependencies が `<6.1.0` で、それより新しい TS では lint が落ちるため |
-| `@takudev-works/dev-config` | 自分たちで出すので、7 日待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
+| `@takudev-works/dev-config` | 自分たちで出すので、7 日待たない。package.json の版、再利用できるワークフローの呼び出し先の SHA、`renovate.json` の preset のタグを 1 本の PR で上げる |
 | mise の `op` | 上げない。Renovate が版を調べる先を持たないため。手で上げる |
 | 脆弱性の PR | ラベルを `security` にする |
 
