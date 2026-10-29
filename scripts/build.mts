@@ -51,10 +51,9 @@ export const build = (outDir: string, compile: (outDir: string) => number | null
     ),
     compiled
   );
-  // src の直下のファイル（renovate.json）を入れないのは、Renovate が main の src/renovate.json を直接読み、dist を読まないため
   flattenInto(
     outDir,
-    filesUnder(src).filter((file) => dirname(file) !== src && !file.endsWith('.mts')),
+    filesUnder(src).filter((file) => !file.endsWith('.mts')),
     src
   );
   rmSync(compiled, { recursive: true, force: true });

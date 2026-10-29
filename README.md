@@ -2,7 +2,7 @@
 
 takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本。各 repo はこの repo を git の依存として入れ、`dev-config` コマンドか設定ファイルのパスで各ツールに正本を渡す。
 
-各 repo が読むのは `dist/` のファイル。Renovate の preset だけは、`dist/` ではなく main の `src/renovate.json` を読む。
+各 repo が読むのは `dist/` のファイル。Renovate の preset（`dist/renovate.json`）だけは、各 repo に入れた版ではなく、この repo の main のものを読む（「Renovate」を参照）。
 
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
@@ -22,9 +22,9 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/actionlint.yaml` | actionlint | Blacksmith の runner のラベル |
 | `dist/zizmor.yml` | zizmor | どの repo でも無効にするルールと、検査から外すワークフロー |
 | `dist/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
-| `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate は各 repo に入れた dev-config を読まず、この repo の main の `src/renovate.json` を直接読む |
+| `dist/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset |
 
-正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`pnpm run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。`src/renovate.json` だけは、Renovate が main のこの場所を直接読むので `src/` の直下に置き、`dist/` には入れない。ルートには、この repo 自身を検査するための設定を置く。
+正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`pnpm run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。各 repo には `dist/` だけを読ませ、`src/` は読ませない。正本の元をいくつかのファイルに分けたり、同じツールの設定を用途ごとにいくつも出したりしても、ビルドを通せば、各 repo が読むものを変えずに済むため。ルートには、この repo 自身を検査するための設定を置く。
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
@@ -330,25 +330,25 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 ```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>takudev-works/dev-config//src/renovate"]
+  "extends": ["github>takudev-works/dev-config//dist/renovate"]
 }
 ```
 
-`github>takudev-works/dev-config//src/renovate` は、この repo の main の `src/renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
+`github>takudev-works/dev-config//dist/renovate` は、この repo の main の `dist/renovate.json` を指す（Renovate は preset の名前に `.json` を付けたファイルを読む）。Renovate は GitHub の上で repo を読み、`pnpm install` をしないので、各 repo に入れた dev-config の `node_modules` の中のものは読めない。タグではなく main を読むので、main に入った変更がそのまま各 repo に効く。
 
 | 設定 | 中身 |
 | --- | --- |
 | 実行の時間 | 平日の 9 時より前（日本時間）。lock ファイルの更新は月曜の 9 時より前 |
 | PR | ラベル `dependencies`、担当は `t-i-0414`（レビュアーは各 repo の CODEOWNERS で付く）、コミットメッセージの頭に `chore:`、同時に開く PR は 5 本まで |
 | 上げ方 | 公開から 7 日たった版だけを上げる。範囲指定（`^` など）の下限も上げる |
-| まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる |
+| まとめ方 | npm・Python・GitHub Actions・mise・Terraform のそれぞれで、major 以外を 1 本の PR にまとめる。mise の Terraform は Terraform の PR に入れる。`required_version` と別の PR になると、`required_version` を上げた PR の CI が古い Terraform で動いて落ちるため |
 | major | 承認を待たずに、依存ごとに 1 本ずつ PR を出す。同じ monorepo の package（`vitest` と `@vitest/coverage-v8` など）は、`config:recommended` の決まりで 1 本にまとまる |
 | TypeScript | 6.1 未満に止める。typescript-eslint の peerDependencies が `<6.1.0` で、それより新しい TS では lint が落ちるため |
 | `@takudev-works/dev-config` | 自分たちで出すので、7 日待たない。package.json の版と、再利用できるワークフローの呼び出し先の SHA を 1 本の PR で上げる |
 | mise の `op` | 上げない。Renovate が版を調べる先を持たないため。手で上げる |
 | 脆弱性の PR | ラベルを `security` にする |
 
-設定の検査（`renovate-config-validator`）は依存が大きいので、`pnpm run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate.json` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で回す。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
+設定の検査（`renovate-config-validator`）は依存が大きいので、`pnpm run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate/` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で、ビルドした `dist/renovate.json` と `renovate.json` を検査する。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
 ### npm-package-json-lint
 
@@ -498,7 +498,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ### ビルド
 
-`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` の tool ごとのディレクトリにあるほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。`src/` の直下の `renovate.json` は、Renovate が main から直接読むので `dist/` に入れない。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
+`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` の tool ごとのディレクトリにあるほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
 
 - `dist/` をコミットするのは、各 repo が git の依存として入れるときに、package manager が依存の `prepare` を動かすとは限らないため（pnpm は、`allowBuilds` で許していない依存の install script を動かさない）。入れるときにビルドできない
 - `scripts/` の TS は、Node が型を取り除いてそのまま動かす。そのため、`scripts/` の中の import には `.mts` を付ける（Node は `.mjs` から `.mts` を探さない）

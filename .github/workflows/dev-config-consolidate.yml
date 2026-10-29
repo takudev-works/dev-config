@@ -167,7 +167,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           mkdir -p "$RUNNER_TEMP/dev-config-main"
-          curl -fsSL "https://raw.githubusercontent.com/$REPO/main/src/renovate.json" -o "$RUNNER_TEMP/dev-config-main/renovate.json"
+          curl -fsSL "https://raw.githubusercontent.com/$REPO/main/dist/renovate.json" -o "$RUNNER_TEMP/dev-config-main/renovate.json"
       - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
         with:
           claude_code_oauth_token: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
@@ -179,7 +179,7 @@ jobs:
             この repo の設定のうち、takudev-works/dev-config の正本と重なっているものを消す PR を出してください。
 
             1. 同じ目的の PR がすでに開いていないかを `gh pr list --search "dev-config と重なる設定を消す in:title" --state open` で確かめる。開いていれば何もせずに終わる
-            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/@takudev-works/dev-config` にある（README.md に各ファイルの役割がある）。正本は `node_modules/@takudev-works/dev-config/dist` にある。以下ではこれを「正本のディレクトリ」と書く。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）。ただし Renovate の preset は、各 repo が dev-config の main の `src/renovate.json` を直接読むので、main のものを置いた `${{ runner.temp }}/dev-config-main/renovate.json` と比べる
+            2. 正本を読む。dev-config は、この repo が使っている版が `node_modules/@takudev-works/dev-config` にある（README.md に各ファイルの役割がある）。正本は `node_modules/@takudev-works/dev-config/dist` にある。以下ではこれを「正本のディレクトリ」と書く。比べるのは、dev-config の main ではなく、この版の正本にする（正本にまだ入っていないものを消すと、その repo の検査が落ちるため）。ただし Renovate の preset は、各 repo が dev-config の main の `dist/renovate.json` を直接読むので、main のものを置いた `${{ runner.temp }}/dev-config-main/renovate.json` と比べる
             3. この repo の設定のうち、正本と同じ内容をもう一度書いているものを探す。例:
                - `cspell.json` の `words` や `ignorePaths` のうち、正本のディレクトリの `cspell.json` にあるもの
                - `eslint.config.*` の除外のうち、正本のディレクトリの `eslint.mjs` にあるもの
