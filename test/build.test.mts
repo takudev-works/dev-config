@@ -32,6 +32,10 @@ describe('build', { timeout: 60_000 }, () => {
     expect(existsSync(join(out, 'textlintrc.json'))).toBe(true);
   });
 
+  test('src の直下のファイルは、dist に入れない', () => {
+    expect(existsSync(join(out, 'renovate.json'))).toBe(false);
+  });
+
   test('型の定義は、各 repo が import する正本にだけ置く', () => {
     expect(readdirSync(out).filter((name) => name.endsWith('.d.mts'))).toEqual([
       'eslint.d.mts',

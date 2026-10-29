@@ -2,7 +2,7 @@
 
 takudev-works の各 repo で共通に使う開発の設定と CI のワークフローの正本。各 repo はこの repo を git の依存として入れ、`dev-config` コマンドか設定ファイルのパスで各ツールに正本を渡す。
 
-各 repo が読むのは `dist/` のファイル。
+各 repo が読むのは `dist/` のファイル。Renovate の preset だけは、`dist/` ではなく main の `src/renovate.json` を読む。
 
 | ファイル | ツール | 中身 |
 | --- | --- | --- |
@@ -19,10 +19,12 @@ takudev-works の各 repo で共通に使う開発の設定と CI のワーク�
 | `dist/textlintignore` | textlint | どの repo でも検査しないもの |
 | `dist/prh.yml` | textlint（prh） | 用語の表記ゆれを直す辞書 |
 | `dist/npmpackagejsonlintrc.json` | npm-package-json-lint | package.json の型と書式、`name` の scope（`@takudev-works/`）、`private: true`、依存の重複と並び順 |
+| `dist/actionlint.yaml` | actionlint | Blacksmith の runner のラベル |
+| `dist/zizmor.yml` | zizmor | どの repo でも無効にするルールと、検査から外すワークフロー |
 | `dist/cli.mjs` | `dev-config` コマンド | 上の設定ファイルのパスを足して各ツールを動かす |
-| `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate はこの repo の main の `src/renovate.json` を直接読む。`dist/renovate.json` は、各 repo が入れた版の中身と比べるための写し |
+| `src/renovate.json` | Renovate | 各 repo の `renovate.json` から読む preset。Renovate は各 repo に入れた dev-config を読まず、この repo の main の `src/renovate.json` を直接読む |
 
-正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`pnpm run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。`src/renovate.json` だけは、Renovate が main のこの場所を直接読むので `src/` の直下に置く。ルートには、この repo 自身を検査するための設定を置く。
+正本の元は `src/` の tool ごとのディレクトリ（`src/textlint/` など）に置き、`pnpm run build` で `dist/` の直下に平らに並べる（「この repo の開発の準備」を参照）。`src/renovate.json` だけは、Renovate が main のこの場所を直接読むので `src/` の直下に置き、`dist/` には入れない。ルートには、この repo 自身を検査するための設定を置く。
 
 ファイル名を `.` で始めないのは、git の依存として取り込むときに `.` で始まるファイルが落とされるため（v1.0.0 で起きた）。
 
@@ -496,7 +498,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ### ビルド
 
-`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` のほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
+`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` の tool ごとのディレクトリにあるほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。`src/` の直下の `renovate.json` は、Renovate が main から直接読むので `dist/` に入れない。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
 
 - `dist/` をコミットするのは、各 repo が git の依存として入れるときに、package manager が依存の `prepare` を動かすとは限らないため（pnpm は、`allowBuilds` で許していない依存の install script を動かさない）。入れるときにビルドできない
 - `scripts/` の TS は、Node が型を取り除いてそのまま動かす。そのため、`scripts/` の中の import には `.mts` を付ける（Node は `.mjs` から `.mts` を探さない）
