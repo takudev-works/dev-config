@@ -5,13 +5,13 @@ name: Renovate config
 on:
   pull_request:
     paths:
-      - 'src/renovate.json'
+      - 'src/renovate/**'
       - 'renovate.json'
       - '.github/workflows/renovate-config.yml'
   push:
     branches: [main]
     paths:
-      - 'src/renovate.json'
+      - 'src/renovate/**'
       - 'renovate.json'
       - '.github/workflows/renovate-config.yml'
 
@@ -31,4 +31,4 @@ jobs:
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
         with:
           install_args: node pnpm
-      - run: pnpm dlx --package "renovate@$RENOVATE_VERSION" renovate-config-validator src/renovate.json renovate.json
+      - run: pnpm dlx --package "renovate@$RENOVATE_VERSION" renovate-config-validator dist/renovate.json renovate.json

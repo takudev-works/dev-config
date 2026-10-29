@@ -65,7 +65,7 @@
       "groupSlug": "terraform-non-major"
     },
     {
-      "description": "takudev-works の共通設定は自分たちで出すので、公開から日を置かずに上げる。package.json の版と、再利用できるワークフローの呼び出し先（depName は takudev-works/dev-config）を 1 本の PR で上げる。",
+      "description": "takudev-works の共通設定は自分たちで出すので、公開から日を置かずに上げる。package.json の版、再利用できるワークフローの呼び出し先、renovate.json の preset のタグ（後の 2 つの depName は takudev-works/dev-config）を 1 本の PR で上げる。",
       "matchDepNames": ["@takudev-works/dev-config", "takudev-works/dev-config"],
       "groupName": "dev-config",
       "groupSlug": "dev-config",
