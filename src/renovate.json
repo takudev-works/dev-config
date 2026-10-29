@@ -57,6 +57,14 @@
       "groupSlug": "terraform-non-major"
     },
     {
+      "description": "rangeStrategy が bump なので、Terraform の本体が上がると required_version も上がる。mise の Terraform（depName は terraform）だけ mise tools の PR に分かれると、required_version を上げた PR の CI が古い Terraform で動いて落ちる。mise の Terraform を terraform の PR に入れて、1 本の PR で上げる。",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["terraform"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "terraform (non-major)",
+      "groupSlug": "terraform-non-major"
+    },
+    {
       "description": "takudev-works の共通設定は自分たちで出すので、公開から日を置かずに上げる。package.json の版と、再利用できるワークフローの呼び出し先（depName は takudev-works/dev-config）を 1 本の PR で上げる。",
       "matchDepNames": ["@takudev-works/dev-config", "takudev-works/dev-config"],
       "groupName": "dev-config",
