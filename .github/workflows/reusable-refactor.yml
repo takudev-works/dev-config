@@ -1,0 +1,41 @@
+name: Refactor (reusable)
+
+on:
+  workflow_call:
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+jobs:
+  refactor:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      # persist-credentials: false にしないのは、Claude が branch を push するため
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: # zizmor: ignore[artipacked]
+          fetch-depth: 1
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
+      - run: pnpm install --frozen-lockfile
+
+      - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            この repo のコードを、振る舞いを変えずに読みやすく直せるところを探し、PR で提案してください。
+
+            1. node_modules/@takudev-works/dev-config/README.md の「リファクタ」を読み、見るもの、見ないもの、守ることを確かめる
+            2. この repo の CLAUDE.md と README を読み、repo の書き方の決まりを確かめる
+            3. コードとテストを読み、基準に当てはまるものを洗い出す。根拠として、ファイルと行を控える
+            4. ラベル refactor の付いた PR を `gh pr list --label refactor --state all` で確かめる。閉じたまま merge されなかった PR にある提案は、断られたものとして出し直さない
+            5. 候補があれば、効果の大きいものから選んで branch を切って直し、`pnpm run validate` が通ることを確かめてから PR を出す。PR にはラベル refactor を付ける（無ければ `gh label create refactor` で作る）。ラベル refactor の付いた PR が開いていれば、新しく作らずに、その PR の branch に足す。本文には、直したものごとの理由と、振る舞いが変わらないと言える根拠（どのテストが守っているか）を書く
+            6. 候補がなければ PR を作らず、見たファイルと「提案なし」を報告して終える
+
+            既定の branch に直接 push しない。
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git:*),Bash(gh pr:*),Bash(gh label:*),Bash(pnpm run validate:*)"

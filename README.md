@@ -401,6 +401,8 @@ mise run validate  # CI と同じ検査
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の Node と pnpm などを入れ、`pnpm install --frozen-lockfile` と `pnpm run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
+| `.github/workflows/reusable-dev-env-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「開発環境と文書の見直し」にある |
+| `.github/workflows/reusable-refactor.yml` | Claude Code に、振る舞いを変えずにコードを読みやすく直せるところを探させ、PR で出させる。見るものは「リファクタ」にある |
 
 ```yaml
 # .github/workflows/org-requirements.yml
@@ -446,6 +448,48 @@ jobs:
       actions: read
 ```
 
+```yaml
+# .github/workflows/dev-env-review.yml
+name: Dev env review
+
+on:
+  schedule:
+    # 日本時間（毎月 1 日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  dev-env-review:
+    uses: takudev-works/dev-config/.github/workflows/reusable-dev-env-review.yml@<タグのコミットの SHA> # <タグ>
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+```
+
+```yaml
+# .github/workflows/refactor.yml
+name: Refactor
+
+on:
+  schedule:
+    # 日本時間（毎月 15 日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 15 * *'
+  workflow_dispatch:
+
+jobs:
+  refactor:
+    uses: takudev-works/dev-config/.github/workflows/reusable-refactor.yml@<タグのコミットの SHA> # <タグ>
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+```
+
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - 組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` だけを名前で渡す。`secrets: inherit` にしないのは、呼ばれる側にほかの secret まで渡るため（`secrets: inherit` のままの repo も動く）
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
@@ -464,6 +508,53 @@ jobs:
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 - 組織の ruleset `dev-config` は、全 repo の既定のブランチと `main`・`staging`・`develop` にかかる。この check のほかに、承認 1 件、CODEOWNERS のレビュー、push で古い承認を取り消す、会話の解決、merge 方法は merge と squash、force push と削除の禁止を求める。組織の Owner は常に迂回できるので、自分の PR は迂回して merge する。repo だけの検査は、repo の ruleset で必須の check にせず、その repo の `validate:*` に足す。repo の ruleset を作ると、守るブランチと迂回できる人を組織の ruleset と 2 か所で持つことになるため
 
+## 開発環境と文書の見直し
+
+`dev-env-review.yml` を置いた repo では、その `schedule` で `reusable-dev-env-review.yml` が動く（ひな形では毎月 1 日 9:00、日本時間）。Claude Code は repo の開発環境と文書を読み、直したほうがよいものを見つけたら PR を 1 本出す。PR にはラベル `dev-env-review` が付く。前回の PR が開いたままなら、その PR の branch へ足し、新しくは作らない。閉じたまま merge しなかった PR の提案は、断ったものとして出し直さない。
+
+Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md` から読む。そのため、見るものを変えたときは版を出し、各 repo の dev-config が上がってから効く。
+
+見るものは次のとおり。
+
+- README の「開発の準備」やタスクの説明と、`mise.toml`・package.json・スクリプトの中身が合っているか
+- この README のひな形（`mise.toml` の `setup`・`validate` のタスク、`lefthook.yml`、呼び出すワークフロー）からずれていないか。repo の事情でずらしているものは直さない
+- 手で打つ決まったコマンドのうち、mise のタスクにまとまっていないもの（README に書いた手順など）
+- 新しいマシンで最初から順に実行すると止まりそうな手順
+- ファイルに平文で置かれた秘密の値。1Password の参照（`op://`）と `op run` に移す
+- README・コードコメントが、名前の変わったものや無くなったもの（パス、コマンド、ツール）を指していないか
+
+次のものは、ほかの仕組みが見ているので見ない。
+
+- 依存とツールの版（Renovate）
+- 正本と重なる設定（「正本と各 repo の重なりを片付ける」）
+- Claude の設定（CLAUDE.md、`.claude/`。claude-config の `settings-review`）
+- 手元のマシンの状態（GitHub Actions からは見えない）
+- コードの書き方（「リファクタ」）
+
+## リファクタ
+
+`refactor.yml` を置いた repo では、その `schedule` で `reusable-refactor.yml` が動く（ひな形では毎月 15 日 9:00、日本時間）。Claude Code はコードとテストを読み、振る舞いを変えずに読みやすく直せるところを見つけたら PR を 1 本出す。PR にはラベル `refactor` が付く。開いている PR と閉じた PR の扱いは「開発環境と文書の見直し」と同じ。ひな形では、見直しと PR が重ならないように日をずらしている。
+
+見るものは次のとおり。
+
+- 同じ処理が何か所にも書かれているところ
+- 使われていないコード、export、依存
+- 長すぎる関数やファイル、深い入れ子の条件分岐
+- 周りのコードと違う名前の付け方や書き方
+- 型を弱めているところ（`any`、不要な型の主張など）
+
+守ることは次のとおり。
+
+- 振る舞いを変えない。`pnpm run validate`（テストを含む）が通ることを確かめ、テストで守られていないところは直さない
+- 1 回の PR は、効果の大きいものから数件に絞る。直したものごとに理由を書く
+- コードコメントは組織の決まりに従い、書くのは「なぜそうしないか」だけにする
+
+次のものは見ない。
+
+- 振る舞いを変える改善や機能の追加
+- 文書と開発環境（「開発環境と文書の見直し」）、依存の版（Renovate）
+- フレームワークが決めている書き方
+
 ## 正本と各 repo の重なりを片付ける
 
 `.github/workflows/dev-config-consolidate.yml` が毎週月曜 9:30（日本時間）に、takudev-works の repo を見て次の 2 つを行う。各 repo にワークフローを置かなくてよいように、dev-config の 1 か所で回す。
@@ -475,7 +566,7 @@ jobs:
 
 `remove-duplicates` が dev-config の main ではなく各 repo が使っている版と比べるのは、正本にまだ入っていないものを消すと、その repo の検査が落ちるため。そのため、正本に寄せた設定が各 repo から消えるのは、寄せる PR を merge してタグを打ち、各 repo がその版を入れた後の実行になる。
 
-ほかの private な repo を読み、PR を出すために、組織の GitHub App `takudev-dev-config` を使う。権限は Contents と Pull requests の Read and write。Client ID と秘密鍵は、組織の secret `ORG_DEV_CONFIG_APP_CLIENT_ID` と `ORG_DEV_CONFIG_APP_PRIVATE_KEY`（dev-config だけが読める）に入れてある。
+ほかの private な repo を読み、PR を出すために、組織の GitHub App `takudev-dev-config` を使う。権限は Contents と Pull requests の Read and write。Client ID と秘密鍵は、組織の secret `ORG_DEV_CONFIG_APP_CLIENT_ID` と `ORG_DEV_CONFIG_APP_PRIVATE_KEY` に入れてある。読めるのは dev-config と、`settings-review` で使う claude-config だけ。
 
 ## 名前の付け方
 

@@ -1,0 +1,17 @@
+name: Refactor
+
+on:
+  schedule:
+    # 日本時間（毎月 15 日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 15 * *'
+  workflow_dispatch:
+
+jobs:
+  refactor:
+    uses: ./.github/workflows/reusable-refactor.yml
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
