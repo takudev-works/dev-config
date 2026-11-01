@@ -527,7 +527,7 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 
 - 依存とツールの版（Renovate）
 - 正本と重なる設定（「正本と各 repo の重なりを片付ける」）
-- Claude の設定（CLAUDE.md、`.claude/`。claude-config の weekly-review）
+- Claude の設定（CLAUDE.md、`.claude/`。claude-config の `settings-review`）
 - 手元のマシンの状態（GitHub Actions からは見えない）
 - コードの書き方（「月 1 回のリファクタ」）
 
@@ -566,7 +566,7 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 
 `remove-duplicates` が dev-config の main ではなく各 repo が使っている版と比べるのは、正本にまだ入っていないものを消すと、その repo の検査が落ちるため。そのため、正本に寄せた設定が各 repo から消えるのは、寄せる PR を merge してタグを打ち、各 repo がその版を入れた後の実行になる。
 
-ほかの private な repo を読み、PR を出すために、組織の GitHub App `takudev-dev-config` を使う。権限は Contents と Pull requests の Read and write。Client ID と秘密鍵は、組織の secret `ORG_DEV_CONFIG_APP_CLIENT_ID` と `ORG_DEV_CONFIG_APP_PRIVATE_KEY` に入れてある。読めるのは dev-config と、weekly-review で使う claude-config だけ。
+ほかの private な repo を読み、PR を出すために、組織の GitHub App `takudev-dev-config` を使う。権限は Contents と Pull requests の Read and write。Client ID と秘密鍵は、組織の secret `ORG_DEV_CONFIG_APP_CLIENT_ID` と `ORG_DEV_CONFIG_APP_PRIVATE_KEY` に入れてある。読めるのは dev-config と、`settings-review` で使う claude-config だけ。
 
 ## 名前の付け方
 
