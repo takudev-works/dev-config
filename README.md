@@ -385,12 +385,13 @@ repo の README に「開発の準備」の節を置き、手元で最初に実�
 手元では次の順に実行する。
 
 ```sh
+mise trust         # mise.toml を信頼する（信頼済みなら何もしない）
 mise install       # mise.toml の版の Node、pnpm、lefthook、actionlint、zizmor、shellcheck を入れる
 mise run setup     # 依存と git hook を入れる
 mise run validate  # CI と同じ検査
 ```
 
-前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。ほかのタスクは `mise tasks` で一覧できる。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。ほかのタスクは `mise tasks` で一覧できる。
 ````
 
 ## GitHub Actions の部品
@@ -608,9 +609,10 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 手元では次の順に実行する。
 
 ```sh
+mise trust         # mise.toml を信頼する（信頼済みなら何もしない）
 mise install       # mise.toml の版の Node、pnpm、lefthook、actionlint、zizmor、shellcheck を入れる
 mise run setup     # 依存と git hook を入れる
 mise run validate  # CI と同じ検査
 ```
 
-前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。ほかのタスクは `mise tasks` で一覧できる。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。ほかのタスクは `mise tasks` で一覧できる。
