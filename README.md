@@ -349,8 +349,9 @@ repo の `renovate.json` で preset を読み、repo だけの事情（base の�
 | major | 承認を待たずに、依存ごとに 1 本ずつ PR を出す。同じ monorepo の package（`vitest` と `@vitest/coverage-v8` など）は、`config:recommended` の決まりで 1 本にまとまる |
 | TypeScript | 6.1 未満に止める。typescript-eslint の peerDependencies が `<6.1.0` で、それより新しい TS では lint が落ちるため |
 | `@takudev-works/dev-config` | 自分たちで出すので、7 日待たない。package.json の版、再利用できるワークフローの呼び出し先の SHA、`renovate.json` の preset のタグを 1 本の PR で上げる |
-| mise の `op` | 上げない。Renovate が版を調べる先を持たないため。手で上げる |
 | 脆弱性の PR | ラベルを `security` にする |
+
+1Password CLI（`op`）は、各 repo の `mise.toml` に入れず、Homebrew の cask `1password-cli` で入れる。mise の `op` は Renovate が版を調べる先を持たず、上げられないため。
 
 設定の検査（`renovate-config-validator`）は依存が大きいので、`pnpm run validate` には入れない。renovate の版はワークフローの `RENOVATE_VERSION` に固定し、この repo の `renovate.json` で読む `customManagers:githubActionsVersions` で Renovate に上げさせる。`src/renovate/` か `renovate.json` が変わった PR でだけ、`.github/workflows/renovate-config.yml` で、ビルドした `dist/renovate.json` と `renovate.json` を検査する。動くかどうかがファイルの変更で決まるので、必須の check にはしない。各 repo では回さない。設定に誤りがあれば、Renovate がその repo の Dependency Dashboard か issue で知らせ、更新を止める。
 
