@@ -175,7 +175,7 @@ pre-commit:
       run: pnpm exec dev-config zizmor {staged_files}
 ```
 
-shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に、Node・pnpm・lefthook と一緒に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。`[tasks.setup]` は、「README」の「開発の準備」で使う。
+shellcheck・actionlint・zizmor は npm のパッケージではないので、この repo の `dependencies` には入れられない。各 repo の `mise.toml` に、Node・pnpm・lefthook と一緒に入れる。シェルスクリプトがまだ無い repo にも入れておく。CI も、`mise.toml` にある版で検査する（「GitHub Actions の部品」を参照）。`[tasks.setup]` と `[tasks.validate]` は、「README」の「開発の準備」で使う。手元で日常的に使うコマンドも、`mise run <タスク>` で動かせるように `mise.toml` のタスクにまとめる（`[tasks.validate]` など）。
 
 ```toml
 [tools]
@@ -189,6 +189,10 @@ shellcheck = "<版>"
 [tasks.setup]
 description = "依存と git hook を入れる"
 run = ["pnpm install --frozen-lockfile", "lefthook install"]
+
+[tasks.validate]
+description = "CI と同じ検査をする"
+run = "pnpm run validate"
 ```
 
 ワークフローを CI で検査するだけでなく lefthook でも止めるのは、CI まで待たずに直せて、CI を回し直さずに済むため。エディタの拡張は、actionlint には信頼できるものが無く、zizmor の公式の拡張は repo の外（`node_modules/@takudev-works/dev-config/dist`）の設定を見つけられないので使わない。
@@ -372,7 +376,7 @@ repo の `.github/CODEOWNERS` に `* @t-i-0414` を書く。Renovate や Claude 
 
 ### README
 
-repo の README に「開発の準備」の節を置き、手元で最初に実行することを書く。`mise run setup` は、`mise.toml` の `[tasks.setup]`（「lefthook」を参照）を動かす。repo だけの準備（認証、DB、`.env` など）があれば、この後ろに足す。
+repo の README に「開発の準備」の節を置き、手元で最初に実行することを書く。`mise run setup` と `mise run validate` は、`mise.toml` の `[tasks.setup]` と `[tasks.validate]`（「lefthook」を参照）を動かす。repo だけの準備（認証、DB、`.env` など）があれば、この後ろに足す。
 
 ````markdown
 ## 開発の準備
@@ -382,10 +386,10 @@ repo の README に「開発の準備」の節を置き、手元で最初に実�
 ```sh
 mise install       # mise.toml の版の Node、pnpm、lefthook、actionlint、zizmor、shellcheck を入れる
 mise run setup     # 依存と git hook を入れる
-pnpm run validate  # CI と同じ検査
+mise run validate  # CI と同じ検査
 ```
 
-前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。ほかのタスクは `mise tasks` で一覧できる。
 ````
 
 ## GitHub Actions の部品
@@ -502,7 +506,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 
 ### ビルド
 
-`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` の tool ごとのディレクトリにあるほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `pnpm run build` を実行し、`dist/` も一緒にコミットする。
+`src/` の TS（`*.mts`）を `tsc` で JS（`*.mjs`）と型の定義（`*.d.mts`）にし、`src/` の tool ごとのディレクトリにあるほかのファイル（JSON・YAML・除外ファイル）と一緒に、`dist/` の直下に平らに並べる。名前の重なるファイルがあれば、ビルドを止める。`src/` を変えたら `mise run build` を実行し、`dist/` も一緒にコミットする。
 
 - `dist/` をコミットするのは、各 repo が git の依存として入れるときに、package manager が依存の `prepare` を動かすとは限らないため（pnpm は、`allowBuilds` で許していない依存の install script を動かさない）。入れるときにビルドできない
 - `scripts/` の TS は、Node が型を取り除いてそのまま動かす。そのため、`scripts/` の中の import には `.mts` を付ける（Node は `.mjs` から `.mts` を探さない）
@@ -515,7 +519,7 @@ v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打っ�
 ```sh
 mise install       # mise.toml の版の Node、pnpm、lefthook、actionlint、zizmor、shellcheck を入れる
 mise run setup     # 依存と git hook を入れる
-pnpm run validate  # CI と同じ検査
+mise run validate  # CI と同じ検査
 ```
 
-前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。
+前もって `mise` を入れておく（入れ方は https://mise.jdx.dev/getting-started.html ）。初めて使う repo では、`mise trust` で `mise.toml` を信頼してから実行する。ほかのタスクは `mise tasks` で一覧できる。

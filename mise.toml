@@ -9,3 +9,11 @@ shellcheck = "0.11.0"
 [tasks.setup]
 description = "依存と git hook を入れる"
 run = ["pnpm install --frozen-lockfile", "lefthook install"]
+
+[tasks.validate]
+description = "CI と同じ検査をする"
+run = "pnpm run validate"
+
+[tasks.build]
+description = "src/ の正本を dist/ にビルドする"
+run = "pnpm run build"
