@@ -401,6 +401,7 @@ mise run validate  # CI と同じ検査
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の Node と pnpm などを入れ、`pnpm install --frozen-lockfile` と `pnpm run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
+| `.github/workflows/reusable-monthly-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「月 1 回の見直し」にある |
 
 ```yaml
 # .github/workflows/org-requirements.yml
@@ -446,6 +447,27 @@ jobs:
       actions: read
 ```
 
+```yaml
+# .github/workflows/monthly-review.yml
+name: Monthly review
+
+on:
+  schedule:
+    # 日本時間（毎月 1 日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  monthly-review:
+    uses: takudev-works/dev-config/.github/workflows/reusable-monthly-review.yml@<タグのコミットの SHA> # <タグ>
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+```
+
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - 組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` だけを名前で渡す。`secrets: inherit` にしないのは、呼ばれる側にほかの secret まで渡るため（`secrets: inherit` のままの repo も動く）
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
@@ -463,6 +485,28 @@ jobs:
 - zizmor の指摘を、目的上そのままにするときは、理由をコメントに書き、指摘の行に `# zizmor: ignore[<指摘の名前>]` を付ける。`run: |` の中のシェルに書いても効かないので、`run: |` の行に付ける
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 - 組織の ruleset `dev-config` は、全 repo の既定のブランチと `main`・`staging`・`develop` にかかる。この check のほかに、承認 1 件、CODEOWNERS のレビュー、push で古い承認を取り消す、会話の解決、merge 方法は merge と squash、force push と削除の禁止を求める。組織の Owner は常に迂回できるので、自分の PR は迂回して merge する。repo だけの検査は、repo の ruleset で必須の check にせず、その repo の `validate:*` に足す。repo の ruleset を作ると、守るブランチと迂回できる人を組織の ruleset と 2 か所で持つことになるため
+
+## 月 1 回の見直し
+
+`monthly-review.yml` を置いた repo では、毎月 1 日 9:00（日本時間）に `reusable-monthly-review.yml` が動く。Claude Code は repo の開発環境と文書を読み、直したほうがよいものを見つけたら PR を 1 本出す。PR にはラベル `monthly-review` が付く。前の月の PR が開いたままなら、その PR の branch へ足し、新しくは作らない。閉じたまま merge しなかった PR の提案は、断ったものとして出し直さない。
+
+Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md` から読む。そのため、見るものを変えたときは版を出し、各 repo の dev-config が上がってから効く。
+
+見るものは次のとおり。
+
+- README の「開発の準備」やタスクの説明と、`mise.toml`・package.json・スクリプトの中身が合っているか
+- この README のひな形（`mise.toml` の `setup`・`validate` のタスク、`lefthook.yml`、呼び出すワークフロー）からずれていないか。repo の事情でずらしているものは直さない
+- 手で打つ決まったコマンドのうち、mise のタスクにまとまっていないもの（README に書いた手順など）
+- 新しいマシンで最初から順に実行すると止まりそうな手順
+- ファイルに平文で置かれた秘密の値。1Password の参照（`op://`）と `op run` に移す
+- README・コードコメントが、名前の変わったものや無くなったもの（パス、コマンド、ツール）を指していないか
+
+次のものは、ほかの仕組みが見ているので見ない。
+
+- 依存とツールの版（Renovate）
+- 正本と重なる設定（「正本と各 repo の重なりを片付ける」）
+- Claude の設定（CLAUDE.md、`.claude/`。claude-config の weekly-review）
+- 手元のマシンの状態（GitHub Actions からは見えない）
 
 ## 正本と各 repo の重なりを片付ける
 

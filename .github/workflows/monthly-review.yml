@@ -1,0 +1,17 @@
+name: Monthly review
+
+on:
+  schedule:
+    # 日本時間（毎月 1 日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  monthly-review:
+    uses: ./.github/workflows/reusable-monthly-review.yml
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
