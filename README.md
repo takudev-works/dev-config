@@ -401,8 +401,8 @@ mise run validate  # CI と同じ検査
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の Node と pnpm などを入れ、`pnpm install --frozen-lockfile` と `pnpm run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
-| `.github/workflows/reusable-monthly-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「月 1 回の見直し」にある |
-| `.github/workflows/reusable-monthly-refactor.yml` | Claude Code に、振る舞いを変えずにコードを読みやすく直せるところを探させ、PR で出させる。見るものは「月 1 回のリファクタ」にある |
+| `.github/workflows/reusable-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「開発環境と文書の見直し」にある |
+| `.github/workflows/reusable-refactor.yml` | Claude Code に、振る舞いを変えずにコードを読みやすく直せるところを探させ、PR で出させる。見るものは「リファクタ」にある |
 
 ```yaml
 # .github/workflows/org-requirements.yml
@@ -449,8 +449,8 @@ jobs:
 ```
 
 ```yaml
-# .github/workflows/monthly-review.yml
-name: Monthly review
+# .github/workflows/review.yml
+name: Review
 
 on:
   schedule:
@@ -459,8 +459,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  monthly-review:
-    uses: takudev-works/dev-config/.github/workflows/reusable-monthly-review.yml@<タグのコミットの SHA> # <タグ>
+  review:
+    uses: takudev-works/dev-config/.github/workflows/reusable-review.yml@<タグのコミットの SHA> # <タグ>
     secrets:
       ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:
@@ -470,8 +470,8 @@ jobs:
 ```
 
 ```yaml
-# .github/workflows/monthly-refactor.yml
-name: Monthly refactor
+# .github/workflows/refactor.yml
+name: Refactor
 
 on:
   schedule:
@@ -480,8 +480,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  monthly-refactor:
-    uses: takudev-works/dev-config/.github/workflows/reusable-monthly-refactor.yml@<タグのコミットの SHA> # <タグ>
+  refactor:
+    uses: takudev-works/dev-config/.github/workflows/reusable-refactor.yml@<タグのコミットの SHA> # <タグ>
     secrets:
       ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:
@@ -508,9 +508,9 @@ jobs:
 - 呼び出したワークフローの check の名前は `<呼び出す側の job> / <呼ばれる側の job>`（`dev-config / validate`）になる。組織の ruleset `dev-config` が、既定のブランチへの merge にこの check の合格を求める。画面には、ワークフロー名を頭に付けた `Org Requirements / dev-config / validate` と出る
 - 組織の ruleset `dev-config` は、全 repo の既定のブランチと `main`・`staging`・`develop` にかかる。この check のほかに、承認 1 件、CODEOWNERS のレビュー、push で古い承認を取り消す、会話の解決、merge 方法は merge と squash、force push と削除の禁止を求める。組織の Owner は常に迂回できるので、自分の PR は迂回して merge する。repo だけの検査は、repo の ruleset で必須の check にせず、その repo の `validate:*` に足す。repo の ruleset を作ると、守るブランチと迂回できる人を組織の ruleset と 2 か所で持つことになるため
 
-## 月 1 回の見直し
+## 開発環境と文書の見直し
 
-`monthly-review.yml` を置いた repo では、毎月 1 日 9:00（日本時間）に `reusable-monthly-review.yml` が動く。Claude Code は repo の開発環境と文書を読み、直したほうがよいものを見つけたら PR を 1 本出す。PR にはラベル `monthly-review` が付く。前の月の PR が開いたままなら、その PR の branch へ足し、新しくは作らない。閉じたまま merge しなかった PR の提案は、断ったものとして出し直さない。
+`review.yml` を置いた repo では、その `schedule` で `reusable-review.yml` が動く（ひな形では毎月 1 日 9:00、日本時間）。Claude Code は repo の開発環境と文書を読み、直したほうがよいものを見つけたら PR を 1 本出す。PR にはラベル `review` が付く。前回の PR が開いたままなら、その PR の branch へ足し、新しくは作らない。閉じたまま merge しなかった PR の提案は、断ったものとして出し直さない。
 
 Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md` から読む。そのため、見るものを変えたときは版を出し、各 repo の dev-config が上がってから効く。
 
@@ -529,11 +529,11 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 - 正本と重なる設定（「正本と各 repo の重なりを片付ける」）
 - Claude の設定（CLAUDE.md、`.claude/`。claude-config の `settings-review`）
 - 手元のマシンの状態（GitHub Actions からは見えない）
-- コードの書き方（「月 1 回のリファクタ」）
+- コードの書き方（「リファクタ」）
 
-## 月 1 回のリファクタ
+## リファクタ
 
-`monthly-refactor.yml` を置いた repo では、毎月 15 日 9:00（日本時間）に `reusable-monthly-refactor.yml` が動く。Claude Code はコードとテストを読み、振る舞いを変えずに読みやすく直せるところを見つけたら PR を 1 本出す。PR にはラベル `monthly-refactor` が付く。開いている PR と閉じた PR の扱いは「月 1 回の見直し」と同じ。月の初めの見直しと PR が重ならないように、日をずらしている。
+`refactor.yml` を置いた repo では、その `schedule` で `reusable-refactor.yml` が動く（ひな形では毎月 15 日 9:00、日本時間）。Claude Code はコードとテストを読み、振る舞いを変えずに読みやすく直せるところを見つけたら PR を 1 本出す。PR にはラベル `refactor` が付く。開いている PR と閉じた PR の扱いは「開発環境と文書の見直し」と同じ。ひな形では、見直しと PR が重ならないように日をずらしている。
 
 見るものは次のとおり。
 
@@ -552,7 +552,7 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 次のものは見ない。
 
 - 振る舞いを変える改善や機能の追加
-- 文書と開発環境（「月 1 回の見直し」）、依存の版（Renovate）
+- 文書と開発環境（「開発環境と文書の見直し」）、依存の版（Renovate）
 - フレームワークが決めている書き方
 
 ## 正本と各 repo の重なりを片付ける

@@ -1,4 +1,4 @@
-name: Monthly review (reusable)
+name: Review (reusable)
 
 on:
   workflow_call:
@@ -29,10 +29,10 @@ jobs:
           prompt: |
             この repo の開発環境と文書を見直し、直したほうがよいものを PR で提案してください。
 
-            1. node_modules/@takudev-works/dev-config/README.md の「月 1 回の見直し」を読み、見るものと見ないものを確かめる
+            1. node_modules/@takudev-works/dev-config/README.md の「開発環境と文書の見直し」を読み、見るものと見ないものを確かめる
             2. この repo の README、CLAUDE.md、mise.toml、package.json、lefthook.yml、スクリプト、.github/workflows を読み、基準に当てはまるものを洗い出す。根拠として、ファイルと行を控える
-            3. ラベル monthly-review の付いた PR を `gh pr list --label monthly-review --state all` で確かめる。閉じたまま merge されなかった PR にある提案は、断られたものとして出し直さない
-            4. 候補があれば、branch を切って直し、`pnpm run validate` が通ることを確かめてから PR を出す。PR にはラベル monthly-review を付ける（無ければ `gh label create monthly-review` で作る）。ラベル monthly-review の付いた PR が開いていれば、新しく作らずに、その PR の branch に足す。本文には、候補ごとの理由と根拠、確かめられなかったことを分けて書く
+            3. ラベル review の付いた PR を `gh pr list --label review --state all` で確かめる。閉じたまま merge されなかった PR にある提案は、断られたものとして出し直さない
+            4. 候補があれば、branch を切って直し、`pnpm run validate` が通ることを確かめてから PR を出す。PR にはラベル review を付ける（無ければ `gh label create review` で作る）。ラベル review の付いた PR が開いていれば、新しく作らずに、その PR の branch に足す。本文には、候補ごとの理由と根拠、確かめられなかったことを分けて書く
             5. 候補がなければ PR を作らず、見たファイルと「提案なし」を報告して終える
 
             既定の branch に直接 push しない。

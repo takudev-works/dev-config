@@ -1,4 +1,4 @@
-name: Monthly refactor
+name: Refactor
 
 on:
   schedule:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  monthly-refactor:
-    uses: ./.github/workflows/reusable-monthly-refactor.yml
+  refactor:
+    uses: ./.github/workflows/reusable-refactor.yml
     secrets:
       ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:

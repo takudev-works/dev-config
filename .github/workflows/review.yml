@@ -1,4 +1,4 @@
-name: Monthly review
+name: Review
 
 on:
   schedule:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  monthly-review:
-    uses: ./.github/workflows/reusable-monthly-review.yml
+  review:
+    uses: ./.github/workflows/reusable-review.yml
     secrets:
       ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:
