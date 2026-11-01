@@ -402,6 +402,7 @@ mise run validate  # CI と同じ検査
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の Node と pnpm などを入れ、`pnpm install --frozen-lockfile` と `pnpm run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
 | `.github/workflows/reusable-monthly-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「月 1 回の見直し」にある |
+| `.github/workflows/reusable-monthly-refactor.yml` | Claude Code に、振る舞いを変えずにコードを読みやすく直せるところを探させ、PR で出させる。見るものは「月 1 回のリファクタ」にある |
 
 ```yaml
 # .github/workflows/org-requirements.yml
@@ -468,6 +469,27 @@ jobs:
       id-token: write
 ```
 
+```yaml
+# .github/workflows/monthly-refactor.yml
+name: Monthly refactor
+
+on:
+  schedule:
+    # 日本時間（毎月 15 日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 15 * *'
+  workflow_dispatch:
+
+jobs:
+  monthly-refactor:
+    uses: takudev-works/dev-config/.github/workflows/reusable-monthly-refactor.yml@<タグのコミットの SHA> # <タグ>
+    secrets:
+      ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+```
+
 - 呼び出し先は、タグのコミットの SHA に `# <タグ>` を添えて固定する（「使い方」のコマンドで分かる）。この形なら Renovate が SHA とタグを一緒に更新できる
 - 組織の secret `ORG_CLAUDE_CODE_OAUTH_TOKEN` だけを名前で渡す。`secrets: inherit` にしないのは、呼ばれる側にほかの secret まで渡るため（`secrets: inherit` のままの repo も動く）
 - 呼び出す側の job に書いた権限が上限になるので、`permissions` は呼び出す側に書く
@@ -507,6 +529,31 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 - 正本と重なる設定（「正本と各 repo の重なりを片付ける」）
 - Claude の設定（CLAUDE.md、`.claude/`。claude-config の weekly-review）
 - 手元のマシンの状態（GitHub Actions からは見えない）
+- コードの書き方（「月 1 回のリファクタ」）
+
+## 月 1 回のリファクタ
+
+`monthly-refactor.yml` を置いた repo では、毎月 15 日 9:00（日本時間）に `reusable-monthly-refactor.yml` が動く。Claude Code はコードとテストを読み、振る舞いを変えずに読みやすく直せるところを見つけたら PR を 1 本出す。PR にはラベル `monthly-refactor` が付く。開いている PR と閉じた PR の扱いは「月 1 回の見直し」と同じ。月の初めの見直しと PR が重ならないように、日をずらしている。
+
+見るものは次のとおり。
+
+- 同じ処理が何か所にも書かれているところ
+- 使われていないコード、export、依存
+- 長すぎる関数やファイル、深い入れ子の条件分岐
+- 周りのコードと違う名前の付け方や書き方
+- 型を弱めているところ（`any`、不要な型の主張など）
+
+守ることは次のとおり。
+
+- 振る舞いを変えない。`pnpm run validate`（テストを含む）が通ることを確かめ、テストで守られていないところは直さない
+- 1 回の PR は、効果の大きいものから数件に絞る。直したものごとに理由を書く
+- コードコメントは組織の決まりに従い、書くのは「なぜそうしないか」だけにする
+
+次のものは見ない。
+
+- 振る舞いを変える改善や機能の追加
+- 文書と開発環境（「月 1 回の見直し」）、依存の版（Renovate）
+- フレームワークが決めている書き方
 
 ## 正本と各 repo の重なりを片付ける
 
