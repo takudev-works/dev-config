@@ -401,7 +401,7 @@ mise run validate  # CI と同じ検査
 | --- | --- |
 | `.github/workflows/reusable-validate.yml` | mise で repo の `mise.toml` の版の Node と pnpm などを入れ、`pnpm install --frozen-lockfile` と `pnpm run validate` を回す。その前に、repo の `.github/workflows` を actionlint と zizmor で、シェルスクリプトを shellcheck で検査する。PR では、PR のタイトルと PR のコミットメッセージも commitlint で検査する |
 | `.github/workflows/reusable-claude.yml` | issue や PR のコメントの `@claude` で Claude Code を動かす。書き手が repo の OWNER・MEMBER・COLLABORATOR のときだけ動く |
-| `.github/workflows/reusable-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「開発環境と文書の見直し」にある |
+| `.github/workflows/reusable-dev-env-review.yml` | Claude Code に repo の開発環境と文書を見直させ、直したほうがよいものを PR で出させる。見るものは「開発環境と文書の見直し」にある |
 | `.github/workflows/reusable-refactor.yml` | Claude Code に、振る舞いを変えずにコードを読みやすく直せるところを探させ、PR で出させる。見るものは「リファクタ」にある |
 
 ```yaml
@@ -449,8 +449,8 @@ jobs:
 ```
 
 ```yaml
-# .github/workflows/review.yml
-name: Review
+# .github/workflows/dev-env-review.yml
+name: Dev env review
 
 on:
   schedule:
@@ -459,8 +459,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  review:
-    uses: takudev-works/dev-config/.github/workflows/reusable-review.yml@<タグのコミットの SHA> # <タグ>
+  dev-env-review:
+    uses: takudev-works/dev-config/.github/workflows/reusable-dev-env-review.yml@<タグのコミットの SHA> # <タグ>
     secrets:
       ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:
@@ -510,7 +510,7 @@ jobs:
 
 ## 開発環境と文書の見直し
 
-`review.yml` を置いた repo では、その `schedule` で `reusable-review.yml` が動く（ひな形では毎月 1 日 9:00、日本時間）。Claude Code は repo の開発環境と文書を読み、直したほうがよいものを見つけたら PR を 1 本出す。PR にはラベル `review` が付く。前回の PR が開いたままなら、その PR の branch へ足し、新しくは作らない。閉じたまま merge しなかった PR の提案は、断ったものとして出し直さない。
+`dev-env-review.yml` を置いた repo では、その `schedule` で `reusable-dev-env-review.yml` が動く（ひな形では毎月 1 日 9:00、日本時間）。Claude Code は repo の開発環境と文書を読み、直したほうがよいものを見つけたら PR を 1 本出す。PR にはラベル `dev-env-review` が付く。前回の PR が開いたままなら、その PR の branch へ足し、新しくは作らない。閉じたまま merge しなかった PR の提案は、断ったものとして出し直さない。
 
 Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md` から読む。そのため、見るものを変えたときは版を出し、各 repo の dev-config が上がってから効く。
 

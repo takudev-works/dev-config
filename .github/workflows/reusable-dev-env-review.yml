@@ -1,4 +1,4 @@
-name: Review (reusable)
+name: Dev env review (reusable)
 
 on:
   workflow_call:
@@ -7,7 +7,7 @@ on:
         required: true
 
 jobs:
-  review:
+  dev-env-review:
     runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 60
     permissions:
@@ -31,8 +31,8 @@ jobs:
 
             1. node_modules/@takudev-works/dev-config/README.md の「開発環境と文書の見直し」を読み、見るものと見ないものを確かめる
             2. この repo の README、CLAUDE.md、mise.toml、package.json、lefthook.yml、スクリプト、.github/workflows を読み、基準に当てはまるものを洗い出す。根拠として、ファイルと行を控える
-            3. ラベル review の付いた PR を `gh pr list --label review --state all` で確かめる。閉じたまま merge されなかった PR にある提案は、断られたものとして出し直さない
-            4. 候補があれば、branch を切って直し、`pnpm run validate` が通ることを確かめてから PR を出す。PR にはラベル review を付ける（無ければ `gh label create review` で作る）。ラベル review の付いた PR が開いていれば、新しく作らずに、その PR の branch に足す。本文には、候補ごとの理由と根拠、確かめられなかったことを分けて書く
+            3. ラベル dev-env-review の付いた PR を `gh pr list --label dev-env-review --state all` で確かめる。閉じたまま merge されなかった PR にある提案は、断られたものとして出し直さない
+            4. 候補があれば、branch を切って直し、`pnpm run validate` が通ることを確かめてから PR を出す。PR にはラベル dev-env-review を付ける（無ければ `gh label create dev-env-review` で作る）。ラベル dev-env-review の付いた PR が開いていれば、新しく作らずに、その PR の branch に足す。本文には、候補ごとの理由と根拠、確かめられなかったことを分けて書く
             5. 候補がなければ PR を作らず、見たファイルと「提案なし」を報告して終える
 
             既定の branch に直接 push しない。

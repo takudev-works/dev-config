@@ -1,4 +1,4 @@
-name: Review
+name: Dev env review
 
 on:
   schedule:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  review:
-    uses: ./.github/workflows/reusable-review.yml
+  dev-env-review:
+    uses: ./.github/workflows/reusable-dev-env-review.yml
     secrets:
       ORG_CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.ORG_CLAUDE_CODE_OAUTH_TOKEN }}
     permissions:
