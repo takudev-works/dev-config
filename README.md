@@ -575,7 +575,7 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 | 区分 | 使う名前 | 対象の例 |
 | --- | --- | --- |
 | Taku.dev として名乗る名前 | `Taku.dev` | 名刺、請求書、サイト、アプリストアのデベロッパー名、claude.ai の組織名 |
-| 制作に使うツールの中の名前 | `takudev-works` | GitHub の org、AWS のアカウント名、Vercel のチーム、Canva のチーム、Figma のチームなど |
+| 制作に使うツールの中の名前 | `takudev-works` | GitHub の org、Cloudflare のアカウント名、Vercel のチーム、Canva のチーム、Figma のチームなど |
 | 記号を使えない識別子 | `takudev` | メールドメイン（takudev.net）、Google Workspace のドメイン |
 
 - 名乗る名前は屋号の表記どおり `Taku.dev` と書く。`takudev` や `Takudev` と書かない
@@ -583,7 +583,6 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 - 制作に限らず事業全体で使うツールの組織名（claude.ai など）は、名乗る名前として `Taku.dev` にする
 - ドメインや ID のように `.` を使えない、または使うと別の意味になるところは `takudev` にする
 - ドメインは takudev.net のまま使う。takudev-works.net には移さない
-- AWS のルートのメールアドレスは takudev.net のものにする。アカウント名は表示名なので `takudev-works` でよい
 - GitHub の org は、名前を変えると URL や連携の設定に影響が出るので、`takudev-works` のまま長く使う
 
 ## 変更の流れ
