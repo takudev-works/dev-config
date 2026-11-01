@@ -16,12 +16,6 @@
   },
   "packageRules": [
     {
-      "description": "mise の op（1Password CLI）は aqua の http 型パッケージで、Renovate は mise の aqua backend を github-tags と解釈するため必ず no-result になる。配信元に対応する GitHub リポジトリが無く、参照できる datasource が無い。バージョンは手動で上げる。",
-      "matchManagers": ["mise"],
-      "matchDepNames": ["op"],
-      "enabled": false
-    },
-    {
       "description": "typescript-eslint の peerDependencies が typescript >=4.8.4 <6.1.0 で、それより新しい TS では lint が落ちる。typescript-eslint が対応したら上限を上げる。TypeScript は dev-config の依存なので、どの repo にも効くようにここに置く。",
       "matchPackageNames": ["typescript"],
       "allowedVersions": "<6.1"
