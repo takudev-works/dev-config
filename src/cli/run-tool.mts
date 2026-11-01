@@ -33,8 +33,8 @@ type Spawn = (
   options: { cwd: string; stdio: 'inherit' }
 ) => { status: number | null; error?: Error };
 
-export const ignoreFile = (name: string, repoIgnore: string, cwd: string) => {
-  const repoPath = join(cwd, repoIgnore);
+export const ignoreFile = (name: string, repoOverride: string, cwd: string) => {
+  const repoPath = join(cwd, repoOverride);
   if (!existsSync(repoPath)) return canonical(name);
   const merged = join(mkdtempSync(join(tmpdir(), 'dev-config-')), name);
   writeFileSync(
@@ -44,8 +44,8 @@ export const ignoreFile = (name: string, repoIgnore: string, cwd: string) => {
   return merged;
 };
 
-const repoOrCanonical = (repoConfig: string, name: string, cwd: string) => {
-  const repoPath = join(cwd, repoConfig);
+const repoOrCanonical = (name: string, repoOverride: string, cwd: string) => {
+  const repoPath = join(cwd, repoOverride);
   return existsSync(repoPath) ? repoPath : canonical(name);
 };
 
@@ -54,7 +54,7 @@ export const tools: Record<string, Tool> = {
     bin: 'actionlint',
     options: (cwd) => [
       '-config-file',
-      repoOrCanonical('.github/actionlint.yaml', 'actionlint.yaml', cwd)
+      repoOrCanonical('actionlint.yaml', '.github/actionlint.yaml', cwd)
     ]
   },
   commitlint: {
@@ -94,7 +94,7 @@ export const tools: Record<string, Tool> = {
       '--min-severity',
       'low',
       '--config',
-      repoOrCanonical('.github/zizmor.yml', 'zizmor.yml', cwd)
+      repoOrCanonical('zizmor.yml', '.github/zizmor.yml', cwd)
     ]
   }
 };

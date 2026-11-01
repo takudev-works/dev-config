@@ -21,16 +21,16 @@ export const canonical = (name) => {
     }
     return beside;
 };
-export const ignoreFile = (name, repoIgnore, cwd) => {
-    const repoPath = join(cwd, repoIgnore);
+export const ignoreFile = (name, repoOverride, cwd) => {
+    const repoPath = join(cwd, repoOverride);
     if (!existsSync(repoPath))
         return canonical(name);
     const merged = join(mkdtempSync(join(tmpdir(), 'dev-config-')), name);
     writeFileSync(merged, `${readFileSync(canonical(name), 'utf8')}\n${readFileSync(repoPath, 'utf8')}`);
     return merged;
 };
-const repoOrCanonical = (repoConfig, name, cwd) => {
-    const repoPath = join(cwd, repoConfig);
+const repoOrCanonical = (name, repoOverride, cwd) => {
+    const repoPath = join(cwd, repoOverride);
     return existsSync(repoPath) ? repoPath : canonical(name);
 };
 export const tools = {
@@ -38,7 +38,7 @@ export const tools = {
         bin: 'actionlint',
         options: (cwd) => [
             '-config-file',
-            repoOrCanonical('.github/actionlint.yaml', 'actionlint.yaml', cwd)
+            repoOrCanonical('actionlint.yaml', '.github/actionlint.yaml', cwd)
         ]
     },
     commitlint: {
@@ -78,7 +78,7 @@ export const tools = {
             '--min-severity',
             'low',
             '--config',
-            repoOrCanonical('.github/zizmor.yml', 'zizmor.yml', cwd)
+            repoOrCanonical('zizmor.yml', '.github/zizmor.yml', cwd)
         ]
     }
 };
