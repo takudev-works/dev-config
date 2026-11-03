@@ -1,0 +1,94 @@
+name: Release PR
+
+on:
+  schedule:
+    # 日本時間（平日 9:00）で書かないのは、schedule の cron が UTC で動くため
+    - cron: '0 0 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  release-pr:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 5
+    permissions: {}
+    env:
+      BRANCH: chore/release
+      BASE: ${{ github.event.repository.default_branch }}
+    steps:
+      # GITHUB_TOKEN を使わないのは、GITHUB_TOKEN で作った PR では CI が動かず、必須の check が付かないため
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_DEV_CONFIG_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 前のタグから差分があれば、版を上げる PR を出す
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          set -o pipefail
+          current=$(jq -r .version package.json)
+          if ! git rev-parse -q --verify "refs/tags/v$current" >/dev/null; then
+            echo "::warning::package.json の版 v$current のタグが無い。release-tag.yml が打つのを待つ"
+            exit 0
+          fi
+          previous=$(git describe --tags --abbrev=0 HEAD)
+          commits=$(git log --no-merges --format='%h %s' "$previous..HEAD")
+          if [ -z "$commits" ]; then
+            echo "$previous から差分が無い"
+            exit 0
+          fi
+
+          open_pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          # grep -q にしないのは、合った時点で grep が終わると git log が SIGPIPE で落ち、pipefail で合わなかった扱いになるため
+          if git log --no-merges --format=%s "$previous..HEAD" | grep -E '^[a-z]+(\([^)]*\))?!:' >/dev/null ||
+            git log --no-merges --format=%B "$previous..HEAD" | grep -E '^BREAKING[ -]CHANGE:' >/dev/null; then
+            if [ -n "$open_pr" ]; then
+              gh pr close "$open_pr" --comment "破壊的変更が入ったので閉じた。major の版は人が上げる" --delete-branch
+            fi
+            echo "::warning::$previous から破壊的変更が入っている。major の版は人が上げる"
+            exit 0
+          fi
+
+          IFS=. read -r major minor patch <<<"$current"
+          if git log --no-merges --format=%s "$previous..HEAD" | grep -E '^feat(\([^)]*\))?:' >/dev/null; then
+            next="$major.$((minor + 1)).0"
+          else
+            next="$major.$minor.$((patch + 1))"
+          fi
+
+          jq --arg version "$next" '.version = $version' package.json >"$RUNNER_TEMP/package.json"
+          mv "$RUNNER_TEMP/package.json" package.json
+          bot_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "$bot_id+${APP_SLUG}[bot]@users.noreply.github.com"
+          title="chore: v$next を出す"
+          git commit --quiet -am "$title"
+          git push --quiet --force "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" "HEAD:refs/heads/$BRANCH"
+
+          # コミットの一覧をコードブロックに入れるのは、Renovate の PR の題名にある @types/node などが、GitHub の人や組織への通知にならないようにするため
+          {
+            echo "$previous から次のコミットが入ったので、版を v$next に上げる。merge すると release-tag.yml が v$next のタグと GitHub Release を作る。"
+            echo
+            echo '```text'
+            echo "$commits"
+            echo '```'
+          } >"$RUNNER_TEMP/body.md"
+          if [ -n "$open_pr" ]; then
+            gh pr edit "$open_pr" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            echo "PR #$open_pr を v$next に更新した"
+          else
+            gh pr create --base "$BASE" --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi
