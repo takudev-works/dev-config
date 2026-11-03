@@ -590,6 +590,8 @@ Claude Code は、この節を `node_modules/@takudev-works/dev-config/README.md
 
 変更は PR で出す。版を上げるときは、PR で package.json の `version` を上げる。merge すると `.github/workflows/release-tag.yml` が、そのコミットに同じ版のタグ（`v` に版を付けたもの）を打ち、前のタグからの PR を並べた GitHub Release を作る。各 repo の Renovate の PR に、この変更点が載る。その版のタグがもうあれば何もしない。タグは手で打たない。各 repo は Renovate などでタグを更新する。
 
+Renovate の PR のように版を上げずに merge した変更も各 repo に届くように、`.github/workflows/release-pr.yml` が平日 9:00（日本時間）に、版を上げる PR を `chore/release` のブランチで出す。Renovate も平日に動くので、それに合わせている。前のタグから差分が無い日は出さない。上げる版は、前のタグからのコミットの型で決める。`feat` があれば minor、それ以外は patch を上げる。破壊的変更（`!` や `BREAKING CHANGE`）があるときは PR を出さず、開いている PR も閉じる。major の版は人が上げる。PR がもう開いていれば、その日の main で作り直す。merge は人が行い、merge すると上の `release-tag.yml` がタグと GitHub Release を作る。PR を出すのは組織の GitHub App `takudev-dev-config`（「正本と各 repo の重なりを片付ける」を参照）で、GITHUB_TOKEN で作った PR では CI が動かないため。
+
 v3.1.0 と v4.0.0 のタグは、package.json の版が `3.0.0` のまま打った。各 repo がタグのコミットの SHA を参照しているので、打ち直していない。
 
 ## この repo の開発の準備
