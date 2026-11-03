@@ -52,8 +52,9 @@ jobs:
           fi
 
           open_pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
-          if git log --no-merges --format=%s "$previous..HEAD" | grep -Eq '^[a-z]+(\([^)]*\))?!:' ||
-            git log --no-merges --format=%B "$previous..HEAD" | grep -Eq '^BREAKING[ -]CHANGE:'; then
+          # grep -q にしないのは、合った時点で grep が終わると git log が SIGPIPE で落ち、pipefail で合わなかった扱いになるため
+          if git log --no-merges --format=%s "$previous..HEAD" | grep -E '^[a-z]+(\([^)]*\))?!:' >/dev/null ||
+            git log --no-merges --format=%B "$previous..HEAD" | grep -E '^BREAKING[ -]CHANGE:' >/dev/null; then
             if [ -n "$open_pr" ]; then
               gh pr close "$open_pr" --comment "破壊的変更が入ったので閉じた。major の版は人が上げる" --delete-branch
             fi
@@ -62,7 +63,7 @@ jobs:
           fi
 
           IFS=. read -r major minor patch <<<"$current"
-          if git log --no-merges --format=%s "$previous..HEAD" | grep -Eq '^feat(\([^)]*\))?:'; then
+          if git log --no-merges --format=%s "$previous..HEAD" | grep -E '^feat(\([^)]*\))?:' >/dev/null; then
             next="$major.$((minor + 1)).0"
           else
             next="$major.$minor.$((patch + 1))"
