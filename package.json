@@ -49,6 +49,6 @@
   "devDependencies": {
     "@types/node": "^26.6.6"
   },
-  "packageManager": "pnpm@12.17.0",
+  "packageManager": "pnpm@12.18.0",
   "prettier": "./src/prettier/prettierrc.json"
 }
