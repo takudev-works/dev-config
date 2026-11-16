@@ -30,7 +30,8 @@
     "**/uv.lock",
     "**/package-lock.json",
     "**/.terraform.lock.hcl",
-    "**/.gitignore"
+    "**/.gitignore",
+    "**/op.env"
   ],
   "ignoreRegExpList": [
     "/\\p{Script=Hiragana}+/gu",
