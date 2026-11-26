@@ -20,7 +20,7 @@ jobs:
     steps:
       # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を読めないため。
       # repositories で絞らないのは、組織のすべての repo を読むのが目的のため
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         id: app-token
         with:
           client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
@@ -81,7 +81,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # GITHUB_TOKEN を使わないのは、この repo しか読めず、ほかの private な repo を clone できないため。
       # repositories で絞らないのは、組織のすべての repo を読むのが目的のため
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         id: app-token
         with:
           client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
@@ -144,7 +144,7 @@ jobs:
         repo: ${{ fromJSON(needs.list-repos.outputs.with-dev-config) }}
     steps:
       # GITHUB_TOKEN を使わないのは、ほかの repo に push も PR もできず、GITHUB_TOKEN で作った PR では CI も動かないため
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         id: app-token
         with:
           client-id: ${{ secrets.ORG_DEV_CONFIG_APP_CLIENT_ID }}
