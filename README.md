@@ -264,6 +264,8 @@ cspell だけは repo に `cspell.json` を置き、正本を `import` する。
 
 検査の対象はすべてのファイル（`cspell "**"`）にする。cspell は TypeScript・Python・Ruby・シェルなど、ファイルの種類ごとの辞書を拡張子に応じて自動で使うので、コードを検査しても誤検知は少ない。バイナリ、`.gitignore` で除外したファイル、正本の `ignorePaths` に当たるファイルは読み飛ばす。
 
+手元だけの設定ファイル（`.claude/settings.local.json`、`.env.local` など、名前が `.local` か `.local.<拡張子>` で終わるもの）は、正本の `ignorePaths` で外している。cspell が読むのは repo の `.gitignore` だけで、全体の gitignore（`core.excludesFile`）で除外していても検査してしまうため。
+
 lefthook では `--no-must-find-files` を付ける。コミットしたファイルがすべて読み飛ばされる（画像だけをコミットしたときなど）と、付けないと「対象が無い」として失敗する。
 
 日本語は、ひらがな・カタカナ・漢字を `ignoreRegExpList` で検査から外している。cspell には日本語の辞書がない。
