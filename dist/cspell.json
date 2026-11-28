@@ -31,7 +31,9 @@
     "**/package-lock.json",
     "**/.terraform.lock.hcl",
     "**/.gitignore",
-    "**/op.env"
+    "**/op.env",
+    "**/*.local",
+    "**/*.local.*"
   ],
   "ignoreRegExpList": [
     "/\\p{Script=Hiragana}+/gu",
